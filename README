@@ -1,26 +1,49 @@
 CREATING A SPECCHECKER
 
-1. IMPLEMENT
-Implement classes required by your homework specification. Label any methods and fields required by the assignment with the @Specified annotation. See org.twodee.speccheck.example.* for examples of tuning @Specified to check for things like supertypes and instance variable counts.
+------------------------------------------------------------------------------ 
 
-If the students' code is to be placed in a package different from the reference implementation's package, use @Specified's inPackage parameter to identify the correct location of the students' classes. If this parameter is blank, then the student's implementation will be looked for in the same package as the reference implementation.
+1. IMPLEMENT
+Implement classes required by your homework specification.
+Label any methods and fields required by the assignment with the
+@Specified annotation. See org.twodee.speccheck.example.* for examples
+of tuning @Specified to check for things like supertypes and instance
+variable counts.
+
+If the students' code is to be placed in a package different from the
+reference implementation's package, use @Specified's inPackage parameter
+to identify the correct location of the students' classes. If this
+parameter is blank, then the student's implementation will be looked for
+in the same package as the reference implementation.
+
+------------------------------------------------------------------------------ 
 
 2. GENERATE TESTS
 Generate interface-conformance tests with a line like:
 
     SpecCheck.generate(RequiredClassA.class, RequiredClassB.class, ...);
 
-The generated tests will be printed to the console. Copy and paste these into a test suite file, perhaps named SpecChecker.java.
+The generated tests will be printed to the console. Copy and paste these
+into a test suite file, perhaps named SpecChecker.java.
 
-Also in this file, add a little main method to run the tests and display the results in the console:
+Also in this file, add a little main method to run the tests and display
+the results in the console:
 
   public static void main(String[] args) {
     SpecCheck.testAsStudent(SpecChecker.class);
   }
 
-I suggest this because without a main method, the class will be recognized as a JUnit test suite and, depending on your IDE, the results will appear in the JUnit interface, which new programmers may find confusing to navigate.
+I suggest this because without a main method, the class will be
+recognized as a JUnit test suite and, depending on your IDE, the results
+will appear in the JUnit interface, which new programmers may find
+confusing to navigate.
+
+------------------------------------------------------------------------------ 
+
+3. DISTRIBUTE
+Distribute the SpecChecker class and the entire
+org.twodee.speccheck package to your students. You can distribute it as
+a runnable JAR.
    
-4. DISTRIBUTE
-Distribute the SpecChecker class and the entire org.twodee.speccheck package to your students. You can distribute it as a runnable JAR.
-   
-Instruct the student to import the source code or JAR into their IDE, add it and JUnit 4 to their build path, run the JAR or the SpecChecker class, and correct any non-conforming code.
+Instruct the student to import the source code or JAR into their IDE,
+add it and JUnit 4 to their build path, run the JAR or the SpecChecker
+class, and correct any non-conforming code.
