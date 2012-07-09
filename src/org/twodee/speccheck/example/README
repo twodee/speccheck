@@ -1,0 +1,27 @@
+CREATING A SPECCHECKER
+1. Implement your assignment in the required package. Label any methods
+   and fields required by the assignment with the @Specified annotation.
+   See speccheck.example.Example* for examples. See the @Specified
+   annotation to see what aspects of the interface may be checked.
+
+2. Create a speccheck.example.SpecChecker-like class for your assignment.
+   Alter the main method according to the classes required by the
+   assignment.
+   
+3. Create a speccheck.example.GenerateSpecChecker-like class for your
+   assignment. Run it and paste the output into the SpecChecker-like
+   class between the long lines of -. You may need to import several
+   JUnit and reflection classes.
+   
+4. Distribute only the SpecChecker class and all classes in the SpecCheck
+   package to the student. You can distribute it as a runnable JAR.
+   
+5. Instruct the student to import the JAR into Eclipse, add it and
+   JUnit 4 to their build path, run it, and correct any non-conforming
+   code.
+   
+A NOTE ON PACKAGES
+The classes that the students write for the assignment will need to be
+in a non-default package unless you move all testing code to the default
+package. Classes within packages cannot reference classes in the default
+package.
