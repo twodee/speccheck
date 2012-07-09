@@ -33,7 +33,7 @@ public class ModifiersWrongSpecChecker {
   public void testOrgTwodeeSpeccheckExampleModifiersWrong() throws Exception {
     try {
        Class<?> cls = Class.forName("org.twodee.speccheck.example.ModifiersWrong");
-       Assert.assertTrue("The modifiers for class org.twodee.speccheck.example.ModifiersWrong are not correct. " + SpecCheckUtilities.getModifierDiff(1025, cls.getModifiers()), 1025 == cls.getModifiers());
+       Assert.assertTrue("The modifiers for class org.twodee.speccheck.example.ModifiersWrong are not correct. " + SpecCheckUtilities.getModifierDifference(1025, cls.getModifiers()), 1025 == cls.getModifiers());
     } catch (ClassNotFoundException e) {
        Assert.fail("A class by the name of org.twodee.speccheck.example.ModifiersWrong could not be found. Check case, spelling, and that you created your class in the right package.");
     } catch (NoClassDefFoundError e) {
@@ -72,7 +72,7 @@ public class ModifiersWrongSpecChecker {
       Assert.fail("You need a whistle method in class org.twodee.speccheck.example.ModifiersWrong taking 0 arguments.");
     }
     Assert.assertEquals("Your method whistle() in class org.twodee.speccheck.example.ModifiersWrong has the wrong return type.", void.class, method.getReturnType());
-    Assert.assertTrue("The modifiers for method whistle() in class org.twodee.speccheck.example.ModifiersWrong are not correct. " + SpecCheckUtilities.getModifierDiff(1025, method.getModifiers()), 1025 == method.getModifiers());
+    Assert.assertTrue("The modifiers for method whistle() in class org.twodee.speccheck.example.ModifiersWrong are not correct. " + SpecCheckUtilities.getModifierDifference(1025, method.getModifiers()), 1025 == method.getModifiers());
     exceptions = java.util.Arrays.asList(method.getExceptionTypes());
     outlawedExceptions = java.util.Arrays.asList(new Class<?>[]{});
     for (Class<?> exception : exceptions) {

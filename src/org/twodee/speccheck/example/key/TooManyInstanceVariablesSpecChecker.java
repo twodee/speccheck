@@ -33,7 +33,7 @@ public class TooManyInstanceVariablesSpecChecker {
   public void testOrgTwodeeSpeccheckExampleKeyTooManyInstanceVariables() throws Exception {
     try {
        Class<?> cls = Class.forName("org.twodee.speccheck.example.key.TooManyInstanceVariables");
-       Assert.assertTrue("The modifiers for class org.twodee.speccheck.example.key.TooManyInstanceVariables are not correct. " + SpecCheckUtilities.getModifierDiff(1, cls.getModifiers()), 1 == cls.getModifiers());
+       Assert.assertTrue("The modifiers for class org.twodee.speccheck.example.key.TooManyInstanceVariables are not correct. " + SpecCheckUtilities.getModifierDifference(1, cls.getModifiers()), 1 == cls.getModifiers());
     } catch (ClassNotFoundException e) {
        Assert.fail("A class by the name of org.twodee.speccheck.example.key.TooManyInstanceVariables could not be found. Check case, spelling, and that you created your class in the right package.");
     } catch (NoClassDefFoundError e) {

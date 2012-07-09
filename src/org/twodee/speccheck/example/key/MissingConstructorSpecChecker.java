@@ -17,35 +17,34 @@ public class MissingConstructorSpecChecker {
     SpecCheck.testAsStudent(MissingConstructorSpecChecker.class);
   }
 
-  @SpecCheckTest(order = 0)
+  @SpecCheckTest(order=0)
   @Test
   public void testForClasses() throws Exception {
     try {
-      Class.forName("org.twodee.speccheck.example.MissingConstructor");
+       Class.forName("org.twodee.speccheck.example.MissingConstructor");
     } catch (ClassNotFoundException e) {
-      Assert.fail("A class by the name of org.twodee.speccheck.example.MissingConstructor could not be found. Check case, spelling, and that you created your class in the right package.");
+       Assert.fail("A class by the name of org.twodee.speccheck.example.MissingConstructor could not be found. Check case, spelling, and that you created your class in the right package.");
     } catch (NoClassDefFoundError e) {
-      Assert.fail("A class by the name of org.twodee.speccheck.example.MissingConstructor could not be found. Check case, spelling, and that you created your class in the right package.");
+       Assert.fail("A class by the name of org.twodee.speccheck.example.MissingConstructor could not be found. Check case, spelling, and that you created your class in the right package.");
     }
   }
-
-  @SpecCheckTest(order = 10)
+  @SpecCheckTest(order=10)
   @Test
   public void testOrgTwodeeSpeccheckExampleMissingConstructor() throws Exception {
     try {
-      Class<?> cls = Class.forName("org.twodee.speccheck.example.MissingConstructor");
-      Assert.assertTrue("The modifiers for class org.twodee.speccheck.example.MissingConstructor are not correct. " + SpecCheckUtilities.getModifierDiff(1, cls.getModifiers()), 1 == cls.getModifiers());
+       Class<?> cls = Class.forName("org.twodee.speccheck.example.MissingConstructor");
+       Assert.assertTrue("The modifiers for class org.twodee.speccheck.example.MissingConstructor are not correct. " + SpecCheckUtilities.getModifierDifference(1, cls.getModifiers()), 1 == cls.getModifiers());
     } catch (ClassNotFoundException e) {
-      Assert.fail("A class by the name of org.twodee.speccheck.example.MissingConstructor could not be found. Check case, spelling, and that you created your class in the right package.");
+       Assert.fail("A class by the name of org.twodee.speccheck.example.MissingConstructor could not be found. Check case, spelling, and that you created your class in the right package.");
     } catch (NoClassDefFoundError e) {
-      Assert.fail("A class by the name of org.twodee.speccheck.example.MissingConstructor could not be found. Check case, spelling, and that you created your class in the right package.");
+       Assert.fail("A class by the name of org.twodee.speccheck.example.MissingConstructor could not be found. Check case, spelling, and that you created your class in the right package.");
     }
     Class<?> cls = Class.forName("org.twodee.speccheck.example.MissingConstructor");
     List<Class<?>> ifaces = java.util.Arrays.asList(cls.getInterfaces());
     Field field = null;
     LinkedList<Field> fields = new LinkedList<Field>();
     for (Field actual : Class.forName("org.twodee.speccheck.example.MissingConstructor").getDeclaredFields()) {
-      fields.add(actual);
+       fields.add(actual);
     }
     for (Field actual : fields) {
       if (Modifier.isStatic(actual.getModifiers())) {
@@ -62,7 +61,7 @@ public class MissingConstructorSpecChecker {
     } catch (NoSuchMethodException e) {
       Assert.fail("You need a constructor in class org.twodee.speccheck.example.MissingConstructor taking 0 arguments.");
     }
-    Assert.assertTrue("The modifiers for constructor org.twodee.speccheck.example.key.MissingConstructor() are not correct. " + SpecCheckUtilities.getModifierDiff(1, ctor.getModifiers()), 1 == ctor.getModifiers());
+    Assert.assertTrue("The modifiers for constructor org.twodee.speccheck.example.key.MissingConstructor() are not correct. " + SpecCheckUtilities.getModifierDifference(1, ctor.getModifiers()), 1 == ctor.getModifiers());
     exceptions = java.util.Arrays.asList(ctor.getExceptionTypes());
     outlawedExceptions = java.util.Arrays.asList(new Class<?>[]{});
     for (Class<?> exception : exceptions) {
@@ -70,13 +69,12 @@ public class MissingConstructorSpecChecker {
     }
     LinkedList<Constructor<?>> ctors = new LinkedList<Constructor<?>>();
     for (Constructor<?> actual : Class.forName("org.twodee.speccheck.example.MissingConstructor").getDeclaredConstructors()) {
-      ctors.add(actual);
+       ctors.add(actual);
     }
     try {
       ctor = Class.forName("org.twodee.speccheck.example.MissingConstructor").getDeclaredConstructor(new Class<?>[]{});
       ctors.remove(ctor);
-    } catch (NoSuchMethodException e) {
-    }
+    } catch (NoSuchMethodException e) {}
     for (Constructor<?> actual : ctors) {
       if (Modifier.isPublic(actual.getModifiers()) && actual.getParameterTypes().length != 0) {
         Assert.fail(String.format("Constructor %1$s(%2$s) is not in the specification. Any constructors you add should be private (or possibly protected).", actual.getName(), SpecCheckUtilities.getTypesList(actual.getParameterTypes()).replaceAll(".class", "")));
@@ -85,7 +83,7 @@ public class MissingConstructorSpecChecker {
     Method method = null;
     LinkedList<Method> methods = new LinkedList<Method>();
     for (Method m : Class.forName("org.twodee.speccheck.example.MissingConstructor").getDeclaredMethods()) {
-      methods.add(m);
+       methods.add(m);
     }
     for (Method m : methods) {
       if (!m.isBridge() && !Modifier.isPrivate(m.getModifiers()) && !Modifier.isProtected(m.getModifiers()) && !m.getName().equals("main")) {

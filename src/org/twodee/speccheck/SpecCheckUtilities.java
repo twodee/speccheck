@@ -1,3 +1,21 @@
+/*
+ SpecCheck - a system for automatically generating tests for interface-conformance
+ Copyright (C) 2012 Chris Johnson
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.twodee.speccheck;
 
 import java.lang.reflect.Method;
@@ -67,38 +85,54 @@ public class SpecCheckUtilities {
     return Pattern.compile("(.*)\\((.*)\\)").matcher(d.toString());
   }
 
-  public static String getModifierDiff(int expected,
-                                       int actual) {
+  /**
+   * Gets a description of how the modifiers differ from what was expected/
+   * 
+   * @param expected
+   * The expected modifiers
+   * @param actual
+   * The actual modifiers observed
+   * @return A short description how actual differs from expected
+   */
+  public static String getModifierDifference(int expected,
+                                             int actual) {
     String msg = "";
+
     if (Modifier.isStatic(expected) != Modifier.isStatic(actual)) {
       msg += "It should " + (Modifier.isStatic(actual) ? "not " : "") + "be static. ";
     }
+
     if (Modifier.isPublic(expected) != Modifier.isPublic(actual)) {
       msg += "It should " + (Modifier.isPublic(actual) ? "not " : "") + "be public. ";
     }
+
     if (Modifier.isProtected(expected) != Modifier.isProtected(actual)) {
       msg += "It should " + (Modifier.isProtected(actual) ? "not " : "") + "be protected. ";
     }
+
     if (Modifier.isPrivate(expected) != Modifier.isPrivate(actual)) {
       msg += "It should " + (Modifier.isPrivate(actual) ? "not " : "") + "be private. ";
     }
+
     if (Modifier.isFinal(expected) != Modifier.isFinal(actual)) {
       msg += "It should " + (Modifier.isFinal(actual) ? "not " : "") + "be final. ";
     }
+
+    // For interfaces, we don't care if they are marked abstract. TODO: is there
+    // a better way to express this?
     if (Modifier.isInterface(expected) != Modifier.isInterface(actual)) {
-      msg += "It should " + (Modifier.isInterface(actual) ? "not " : "") + "be interface. ";
-    } else {
-      if (Modifier.isAbstract(expected) != Modifier.isAbstract(actual)) {
-        msg += "It should " + (Modifier.isAbstract(actual) ? "not " : "") + "be abstract. ";
-      }
+      msg += "It should " + (Modifier.isInterface(actual) ? "not " : "") + "be an interface. ";
+    } else if (Modifier.isAbstract(expected) != Modifier.isAbstract(actual)) {
+      msg += "It should " + (Modifier.isAbstract(actual) ? "not " : "") + "be abstract. ";
     }
+
     return msg;
   }
 
   /**
-   * Get a comma-separated list of class literals (i.e,
-   * "String.class, boolean.class") corresponding to specified array of class
-   * instances.
+   * Get a comma-separated sequence of stringified class literals (i.e,
+   * "String.class, boolean.class") corresponding to the given array of class
+   * objects.
    * 
    * @param types
    * Ordered list of classes for which a comma-separated String is created.

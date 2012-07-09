@@ -17,35 +17,34 @@ public class NothingSpecifiedSpecChecker {
     SpecCheck.testAsStudent(NothingSpecifiedSpecChecker.class);
   }
 
-  @SpecCheckTest(order = 0)
+  @SpecCheckTest(order=0)
   @Test
   public void testForClasses() throws Exception {
     try {
-      Class.forName("org.twodee.speccheck.example.NothingSpecified");
+       Class.forName("org.twodee.speccheck.example.NothingSpecified");
     } catch (ClassNotFoundException e) {
-      Assert.fail("A class by the name of org.twodee.speccheck.example.NothingSpecified could not be found. Check case, spelling, and that you created your class in the right package.");
+       Assert.fail("A class by the name of org.twodee.speccheck.example.NothingSpecified could not be found. Check case, spelling, and that you created your class in the right package.");
     } catch (NoClassDefFoundError e) {
-      Assert.fail("A class by the name of org.twodee.speccheck.example.NothingSpecified could not be found. Check case, spelling, and that you created your class in the right package.");
+       Assert.fail("A class by the name of org.twodee.speccheck.example.NothingSpecified could not be found. Check case, spelling, and that you created your class in the right package.");
     }
   }
-
-  @SpecCheckTest(order = 10)
+  @SpecCheckTest(order=10)
   @Test
   public void testOrgTwodeeSpeccheckExampleNothingSpecified() throws Exception {
     try {
-      Class<?> cls = Class.forName("org.twodee.speccheck.example.NothingSpecified");
-      Assert.assertTrue("The modifiers for class org.twodee.speccheck.example.NothingSpecified are not correct. " + SpecCheckUtilities.getModifierDiff(1, cls.getModifiers()), 1 == cls.getModifiers());
+       Class<?> cls = Class.forName("org.twodee.speccheck.example.NothingSpecified");
+       Assert.assertTrue("The modifiers for class org.twodee.speccheck.example.NothingSpecified are not correct. " + SpecCheckUtilities.getModifierDifference(1, cls.getModifiers()), 1 == cls.getModifiers());
     } catch (ClassNotFoundException e) {
-      Assert.fail("A class by the name of org.twodee.speccheck.example.NothingSpecified could not be found. Check case, spelling, and that you created your class in the right package.");
+       Assert.fail("A class by the name of org.twodee.speccheck.example.NothingSpecified could not be found. Check case, spelling, and that you created your class in the right package.");
     } catch (NoClassDefFoundError e) {
-      Assert.fail("A class by the name of org.twodee.speccheck.example.NothingSpecified could not be found. Check case, spelling, and that you created your class in the right package.");
+       Assert.fail("A class by the name of org.twodee.speccheck.example.NothingSpecified could not be found. Check case, spelling, and that you created your class in the right package.");
     }
     Class<?> cls = Class.forName("org.twodee.speccheck.example.NothingSpecified");
     List<Class<?>> ifaces = java.util.Arrays.asList(cls.getInterfaces());
     Field field = null;
     LinkedList<Field> fields = new LinkedList<Field>();
     for (Field actual : Class.forName("org.twodee.speccheck.example.NothingSpecified").getDeclaredFields()) {
-      fields.add(actual);
+       fields.add(actual);
     }
     for (Field actual : fields) {
       if (Modifier.isStatic(actual.getModifiers())) {
@@ -59,7 +58,7 @@ public class NothingSpecifiedSpecChecker {
     Constructor<?> ctor = null;
     LinkedList<Constructor<?>> ctors = new LinkedList<Constructor<?>>();
     for (Constructor<?> actual : Class.forName("org.twodee.speccheck.example.NothingSpecified").getDeclaredConstructors()) {
-      ctors.add(actual);
+       ctors.add(actual);
     }
     for (Constructor<?> actual : ctors) {
       if (Modifier.isPublic(actual.getModifiers()) && actual.getParameterTypes().length != 0) {
@@ -69,7 +68,7 @@ public class NothingSpecifiedSpecChecker {
     Method method = null;
     LinkedList<Method> methods = new LinkedList<Method>();
     for (Method m : Class.forName("org.twodee.speccheck.example.NothingSpecified").getDeclaredMethods()) {
-      methods.add(m);
+       methods.add(m);
     }
     for (Method m : methods) {
       if (!m.isBridge() && !Modifier.isPrivate(m.getModifiers()) && !Modifier.isProtected(m.getModifiers()) && !m.getName().equals("main")) {

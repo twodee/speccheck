@@ -32,7 +32,7 @@ public class BadReturnTypeSpecChecker {
   public void testOrgTwodeeSpeccheckExampleBadReturnType() throws Exception {
     try {
        Class<?> cls = Class.forName("org.twodee.speccheck.example.BadReturnType");
-       Assert.assertTrue("The modifiers for class org.twodee.speccheck.example.BadReturnType are not correct. " + SpecCheckUtilities.getModifierDiff(1, cls.getModifiers()), 1 == cls.getModifiers());
+       Assert.assertTrue("The modifiers for class org.twodee.speccheck.example.BadReturnType are not correct. " + SpecCheckUtilities.getModifierDifference(1, cls.getModifiers()), 1 == cls.getModifiers());
     } catch (ClassNotFoundException e) {
        Assert.fail("A class by the name of org.twodee.speccheck.example.BadReturnType could not be found. Check case, spelling, and that you created your class in the right package.");
     } catch (NoClassDefFoundError e) {
@@ -71,7 +71,7 @@ public class BadReturnTypeSpecChecker {
       Assert.fail("You need a foo method in class org.twodee.speccheck.example.BadReturnType taking 0 arguments.");
     }
     Assert.assertEquals("Your method foo() in class org.twodee.speccheck.example.BadReturnType has the wrong return type.", java.lang.String.class, method.getReturnType());
-    Assert.assertTrue("The modifiers for method foo() in class org.twodee.speccheck.example.BadReturnType are not correct. " + SpecCheckUtilities.getModifierDiff(9, method.getModifiers()), 9 == method.getModifiers());
+    Assert.assertTrue("The modifiers for method foo() in class org.twodee.speccheck.example.BadReturnType are not correct. " + SpecCheckUtilities.getModifierDifference(9, method.getModifiers()), 9 == method.getModifiers());
     exceptions = java.util.Arrays.asList(method.getExceptionTypes());
     outlawedExceptions = java.util.Arrays.asList(new Class<?>[]{});
     for (Class<?> exception : exceptions) {

@@ -1,13 +1,25 @@
+/*
+ SpecCheck - a system for automatically generating tests for interface-conformance
+ Copyright (C) 2012 Chris Johnson
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package org.twodee.speccheck;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
-import org.junit.ComparisonFailure;
-import org.junit.internal.ArrayComparisonFailure;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
-import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
 
 /**
  * A utility class for running JUnit tests and reporting any failures.
@@ -20,7 +32,6 @@ public class SpecCheck {
    */
   private SpecCheck() {
   }
-  
 
   /**
    * Issue tests for each of the specified classes.
@@ -67,81 +78,36 @@ public class SpecCheck {
    * 
    * @param tester
    * Class containing JUnit tests.
-   * @param verbose
+   * @param isVerbose
    * Whether or not to be wordy in diagnostic messages.
    * @return Message indicating how many tests passed.
    */
   private static String run(Class<?> tester,
-                            boolean verbose) {
+                            boolean isVerbose) {
     try {
-      return evaluateTests(tester, verbose);
+      return evaluateTests(tester, isVerbose);
     } catch (Error e) {
       return "Tests couldn't be run. Did you add JUnit to your project?";
     }
   }
 
   /**
-   * Run each test in the specified class and print the results.
+   * Run each @Test in the specified tester class and print the results.
    * 
    * @param tester
    * The class containing the JUnit tests.
    * 
-   * @return A message indicating how many tests pass.
+   * @return A message indicating a score and how many tests pass.
    */
   public static String evaluateTests(Class<?> tester,
-                                     boolean verbose) {
+                                     boolean isVerbose) {
     JUnitCore core = new JUnitCore();
     Request request = Request.aClass(tester);
     request = request.sortWith(new SpecCheckTestComparator());
-    SpecCheckRunListener listener = new SpecCheckRunListener();
+    SpecCheckRunListener listener = new SpecCheckRunListener(isVerbose);
     core.addListener(listener);
+    core.run(request);
 
-    PrintStream out = null;
-    if (!verbose) {
-      out = System.out;
-      System.setOut(new PrintStream(new OutputStream() {
-        public void write(int b) {
-        }
-      }));
-    }
-    Result result = core.run(request);
-
-    if (!verbose) {
-      System.setOut(out);
-    }
-
-    int nTests = result.getRunCount();
-    int nFailed = result.getFailureCount();
-    final String wrapPattern = "(.{50,}?) ";
-
-    String scoreMessage = String.format("%d out of %d tests pass.", nTests - nFailed, nTests);
-    if (listener.getScorePossible() > 0) {
-      scoreMessage = String.format("You received %d/%d points. %s", listener.getScore(), listener.getScorePossible(), scoreMessage);
-    }
-    System.out.printf("%s%n%n", scoreMessage);
-
-    if (nFailed > 0) {
-      for (Failure f : result.getFailures()) {
-        System.out.println("PROBLEM: ");
-        if (!f.getException().getClass().equals(AssertionError.class) &&
-            !f.getException().getClass().equals(ComparisonFailure.class) &&
-            !f.getException().getClass().equals(ArrayComparisonFailure.class)) {
-          System.out.println("Your code threw an exception, making it impossible to test. You'll have to sleuth out what caused it. Start by finding the line in *your* code where it was first thrown. Look in the following listing for the first reference to your code.".replaceAll(wrapPattern, "$1\n"));
-          System.out.println(f.getException().getClass());
-          f.getException().printStackTrace(System.out);
-        } else {
-          System.out.printf("%s%n", f.getException().getLocalizedMessage().replaceAll(wrapPattern, "$1\n"));
-        }
-        System.out.printf("%n");
-      }
-
-      System.out.println("If you do not fix these problems, you are deviating from the homework specification and may lose points.".replaceAll(wrapPattern, "$1\n"));
-    }
-
-    if (listener.getScorePossible() == 0) {
-      return scoreMessage;
-    } else {
-      return "TOTAL: " + listener.getScore() + "/" + listener.getScorePossible();
-    }
+    return listener.getScoreMessage();
   }
 }

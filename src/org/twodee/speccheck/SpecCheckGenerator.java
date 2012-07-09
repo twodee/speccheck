@@ -1,3 +1,21 @@
+/*
+ SpecCheck - a system for automatically generating tests for interface-conformance
+ Copyright (C) 2012 Chris Johnson
+
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
 package org.twodee.speccheck;
 
 import java.lang.reflect.Constructor;
@@ -5,7 +23,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.junit.Assert;
 
 /**
  * A generator which produces JUnit tests that ensure classes meet certain
@@ -22,20 +39,6 @@ import org.junit.Assert;
  * @author cjohnson
  */
 public class SpecCheckGenerator {
-  /**
-   * The modifiers that we examine when comparing methods, classes, and member
-   * variables.
-   */
-  private enum ModifierName {
-    Public,
-    Private,
-    Protected,
-    Final,
-    Interface,
-    Abstract,
-    Static
-  };
-  
   static void generateClassExistenceTest(Class<?>... clazzes) {
     System.out.println("@SpecCheckTest(order=0)");
     System.out.println("@Test");
@@ -159,7 +162,7 @@ public class SpecCheckGenerator {
     int modifiers = clazz.getModifiers();
     System.out.printf("  try {%n" +
                       "     Class<?> cls = Class.forName(\"%1$s\");%n" +
-                      "     Assert.assertTrue(\"The modifiers for class %1$s are not correct. \" + SpecCheckUtilities.getModifierDiff(%2$d, cls.getModifiers()), %2$d == cls.getModifiers());%n" +
+                      "     Assert.assertTrue(\"The modifiers for class %1$s are not correct. \" + SpecCheckUtilities.getModifierDifference(%2$d, cls.getModifiers()), %2$d == cls.getModifiers());%n" +
                       "  } catch (ClassNotFoundException e) {%n" +
                       "     Assert.fail(\"A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.\");%n" +
                       "  } catch (NoClassDefFoundError e) {%n" +
@@ -381,7 +384,7 @@ public class SpecCheckGenerator {
 
         // Also verify return type and modifiers are correct.
         System.out.printf("  Assert.assertEquals(\"Your method %1$s(%2$s) in class %4$s has the wrong return type.\", %3$s.class, method.getReturnType());%n", m.getName(), readableList, m.getReturnType().getCanonicalName(), getRequestedClassName(clazz));
-        System.out.printf("  Assert.assertTrue(\"The modifiers for method %1$s(%2$s) in class %4$s are not correct. \" + SpecCheckUtilities.getModifierDiff(%3$d, method.getModifiers()), %3$d == method.getModifiers());%n", m.getName(), readableList, m.getModifiers(), getRequestedClassName(clazz));
+        System.out.printf("  Assert.assertTrue(\"The modifiers for method %1$s(%2$s) in class %4$s are not correct. \" + SpecCheckUtilities.getModifierDifference(%3$d, method.getModifiers()), %3$d == method.getModifiers());%n", m.getName(), readableList, m.getModifiers(), getRequestedClassName(clazz));
 
         Class<?>[] exceptions = m.getAnnotation(Specified.class).mustThrow();
         System.out.println("  exceptions = java.util.Arrays.asList(method.getExceptionTypes());");
@@ -439,7 +442,7 @@ public class SpecCheckGenerator {
         System.out.println("  }");
 
         // Also verify return type and modifiers are correct.
-        System.out.printf("  Assert.assertTrue(\"The modifiers for constructor %1$s(%2$s) are not correct. \" + SpecCheckUtilities.getModifierDiff(%3$d, ctor.getModifiers()), %3$d == ctor.getModifiers());%n", ctor.getName(), readableList, ctor.getModifiers());
+        System.out.printf("  Assert.assertTrue(\"The modifiers for constructor %1$s(%2$s) are not correct. \" + SpecCheckUtilities.getModifierDifference(%3$d, ctor.getModifiers()), %3$d == ctor.getModifiers());%n", ctor.getName(), readableList, ctor.getModifiers());
 
         Class<?>[] exceptions = ctor.getAnnotation(Specified.class).mustThrow();
         System.out.println("  exceptions = java.util.Arrays.asList(ctor.getExceptionTypes());");
@@ -490,7 +493,7 @@ public class SpecCheckGenerator {
         System.out.printf("  Assert.assertEquals(\"Field %1$s.%2$s is of the wrong type.\", %3$s.class, field.getType());%n", getRequestedClassName(clazz), f.getName(), f.getType().getCanonicalName());
 
         // Also verify modifiers are correct.
-        System.out.printf("  Assert.assertTrue(\"The modifiers for field %1$s in class %3$s are not correct. \" + SpecCheckUtilities.getModifierDiff(%2$d, field.getModifiers()), %2$d == field.getModifiers());%n", f.getName(), f.getModifiers(), getRequestedClassName(clazz));
+        System.out.printf("  Assert.assertTrue(\"The modifiers for field %1$s in class %3$s are not correct. \" + SpecCheckUtilities.getModifierDifference(%2$d, field.getModifiers()), %2$d == field.getModifiers());%n", f.getName(), f.getModifiers(), getRequestedClassName(clazz));
       }
     }
   }
