@@ -142,11 +142,20 @@ public class SpecCheckUtilities {
   public static String getTypesList(Class<?>[] types) {
     String list = "";
     if (types.length > 0) {
-      list += types[0].getCanonicalName() + ".class";
+      list += getRequestedClassName(types[0]) + ".class";
       for (int i = 1; i < types.length; ++i) {
-        list += ", " + types[i].getCanonicalName() + ".class";
+        list += ", " + getRequestedClassName(types[i]) + ".class";
       }
     }
     return list;
+  }
+
+  public static String getRequestedClassName(Class<?> clazz) {
+    Specified anno = clazz.getAnnotation(Specified.class);
+    if (anno == null || anno.inPackage().isEmpty()) {
+      return clazz.getName();
+    } else {
+      return anno.inPackage() + "." + clazz.getSimpleName();
+    }
   }
 }

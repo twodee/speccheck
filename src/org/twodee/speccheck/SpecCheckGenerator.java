@@ -50,20 +50,11 @@ public class SpecCheckGenerator {
                         "     Assert.fail(\"A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.\");%n" +
                         "  } catch (NoClassDefFoundError e) {%n" +
                         "     Assert.fail(\"A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.\");%n" +
-                        "  }%n", getRequestedClassName(clazz));
+                        "  }%n", SpecCheckUtilities.getRequestedClassName(clazz));
     }
     System.out.println("}");
   }
   
-  private static String getRequestedClassName(Class<?> clazz) {
-    Specified anno = clazz.getAnnotation(Specified.class);
-    if (anno == null || anno.inPackage().isEmpty()) {
-      return clazz.getName();
-    } else {
-      return anno.inPackage() + "." + clazz.getSimpleName();
-    }
-  }
-
   /**
    * Generate tests for the specified class.
    * 
@@ -135,14 +126,14 @@ public class SpecCheckGenerator {
                         "     Assert.fail(\"A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.\");%n" +
                         "  } catch (NoClassDefFoundError e) {%n" +
                         "     Assert.fail(\"A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.\");%n" +
-                        "  }%n", getRequestedClassName(clazz));
+                        "  }%n", SpecCheckUtilities.getRequestedClassName(clazz));
       System.out.println("  int nInstanceVars = 0;");
       System.out.println("  for (Field f : fields) {");
       System.out.println("     if (!Modifier.isStatic(f.getModifiers())) {");
       System.out.println("       ++nInstanceVars;");
       System.out.println("     }");
       System.out.println("  }");
-      System.out.printf("  Assert.assertTrue(\"You have a lot of instance variables in class %s. Perhaps some of them should be local variables?\", nInstanceVars <= %d);%n", getRequestedClassName(clazz), anno.maxVariableCount());
+      System.out.printf("  Assert.assertTrue(\"You have a lot of instance variables in class %s. Perhaps some of them should be local variables?\", nInstanceVars <= %d);%n", SpecCheckUtilities.getRequestedClassName(clazz), anno.maxVariableCount());
       System.out.println("}");
     }
   }
@@ -167,7 +158,7 @@ public class SpecCheckGenerator {
                       "     Assert.fail(\"A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.\");%n" +
                       "  } catch (NoClassDefFoundError e) {%n" +
                       "     Assert.fail(\"A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.\");%n" +
-                      "  }%n", getRequestedClassName(clazz), modifiers);
+                      "  }%n", SpecCheckUtilities.getRequestedClassName(clazz), modifiers);
   }
 
   private static void generateClassSuperTest(Class<?> clazz) throws ClassNotFoundException {
@@ -180,7 +171,7 @@ public class SpecCheckGenerator {
                         "     Assert.fail(\"A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.\");%n" +
                         "  } catch (NoClassDefFoundError e) {%n" +
                         "     Assert.fail(\"A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.\");%n" +
-                        "  }%n", getRequestedClassName(clazz), getRequestedClassName(clazz.getSuperclass()));
+                        "  }%n", SpecCheckUtilities.getRequestedClassName(clazz), SpecCheckUtilities.getRequestedClassName(clazz.getSuperclass()));
     }
   }
 
@@ -189,9 +180,9 @@ public class SpecCheckGenerator {
     if (annotation != null) {
       Class<?>[] ifaces = annotation.mustImplement();
       System.out.printf("  Class<?> cls = Class.forName(\"%1$s\");%n" +
-                        "  List<Class<?>> ifaces = java.util.Arrays.asList(cls.getInterfaces());%n", getRequestedClassName(clazz));
+                        "  List<Class<?>> ifaces = java.util.Arrays.asList(cls.getInterfaces());%n", SpecCheckUtilities.getRequestedClassName(clazz));
       for (Class<?> iface : ifaces) {
-        System.out.printf("  Assert.assertTrue(\"Class %1$s must implement interface %2$s.\", ifaces.contains(%2$s.class));%n", getRequestedClassName(clazz), getRequestedClassName(iface), getRequestedClassName(iface));
+        System.out.printf("  Assert.assertTrue(\"Class %1$s must implement interface %2$s.\", ifaces.contains(%2$s.class));%n", SpecCheckUtilities.getRequestedClassName(clazz), SpecCheckUtilities.getRequestedClassName(iface), SpecCheckUtilities.getRequestedClassName(iface));
       }
     }
   }
@@ -213,7 +204,7 @@ public class SpecCheckGenerator {
                                                       Method[] methods) {
     // Get a list of all methods in the actual code.
     System.out.println("  LinkedList<Method> methods = new LinkedList<Method>();");
-    System.out.printf("  for (Method m : Class.forName(\"%1$s\").getDeclaredMethods()) {%n", getRequestedClassName(clazz));
+    System.out.printf("  for (Method m : Class.forName(\"%1$s\").getDeclaredMethods()) {%n", SpecCheckUtilities.getRequestedClassName(clazz));
     System.out.println("     methods.add(m);");
     System.out.println("  }");
 
@@ -225,7 +216,7 @@ public class SpecCheckGenerator {
         String list = SpecCheckUtilities.getTypesList(types);
         System.out.println("  try {");
         System.out.printf("    method = Class.forName(\"%1$s\").getDeclaredMethod(\"%2$s\", new Class<?>[]{%3$s});%n",
-                          getRequestedClassName(clazz), m.getName(), list);
+                          SpecCheckUtilities.getRequestedClassName(clazz), m.getName(), list);
         System.out.println("    methods.remove(method);");
         System.out.println("  } catch (NoSuchMethodException e) {}");
       }
@@ -237,7 +228,7 @@ public class SpecCheckGenerator {
     // allow for main to be present.
     System.out.println("  for (Method m : methods) {");
     System.out.println("    if (!m.isBridge() && !Modifier.isPrivate(m.getModifiers()) && !Modifier.isProtected(m.getModifiers()) && !m.getName().equals(\"main\")) {");
-    System.out.println("      Assert.fail(String.format(\"Method " + getRequestedClassName(clazz) + ".%1$s(%2$s) is not in the specification. Any methods you add should be private (or possibly protected).\", m.getName(), SpecCheckUtilities.getTypesList(m.getParameterTypes()).replaceAll(\".class\", \"\")));");
+    System.out.println("      Assert.fail(String.format(\"Method " + SpecCheckUtilities.getRequestedClassName(clazz) + ".%1$s(%2$s) is not in the specification. Any methods you add should be private (or possibly protected).\", m.getName(), SpecCheckUtilities.getTypesList(m.getParameterTypes()).replaceAll(\".class\", \"\")));");
     System.out.println("    }");
     System.out.println("  }");
   }
@@ -261,7 +252,7 @@ public class SpecCheckGenerator {
                                                            Constructor<?>[] ctors) throws ClassNotFoundException {
     // Get a list of all methods in the actual code.
     System.out.println("  LinkedList<Constructor<?>> ctors = new LinkedList<Constructor<?>>();");
-    System.out.printf("  for (Constructor<?> actual : Class.forName(\"%1$s\").getDeclaredConstructors()) {%n", getRequestedClassName(clazz));
+    System.out.printf("  for (Constructor<?> actual : Class.forName(\"%1$s\").getDeclaredConstructors()) {%n", SpecCheckUtilities.getRequestedClassName(clazz));
     System.out.println("     ctors.add(actual);");
     System.out.println("  }");
 
@@ -272,7 +263,7 @@ public class SpecCheckGenerator {
         Class<?>[] types = ctor.getParameterTypes();
         String list = SpecCheckUtilities.getTypesList(types);
         System.out.println("  try {");
-        System.out.printf("    ctor = Class.forName(\"%1$s\").getDeclaredConstructor(new Class<?>[]{%2$s});%n", getRequestedClassName(clazz), list);
+        System.out.printf("    ctor = Class.forName(\"%1$s\").getDeclaredConstructor(new Class<?>[]{%2$s});%n", SpecCheckUtilities.getRequestedClassName(clazz), list);
         System.out.println("    ctors.remove(ctor);");
         System.out.println("  } catch (NoSuchMethodException e) {}");
       }
@@ -314,7 +305,7 @@ public class SpecCheckGenerator {
                                                      Field[] fields) throws ClassNotFoundException {
     // Get a list of all fields in the actual code.
     System.out.println("  LinkedList<Field> fields = new LinkedList<Field>();");
-    System.out.printf("  for (Field actual : Class.forName(\"%1$s\").getDeclaredFields()) {%n", getRequestedClassName(clazz));
+    System.out.printf("  for (Field actual : Class.forName(\"%1$s\").getDeclaredFields()) {%n", SpecCheckUtilities.getRequestedClassName(clazz));
     System.out.println("     fields.add(actual);");
     System.out.println("  }");
 
@@ -323,7 +314,7 @@ public class SpecCheckGenerator {
     for (Field f : fields) {
       if (f.isAnnotationPresent(Specified.class)) {
         System.out.println("  try {");
-        System.out.printf("    field = Class.forName(\"%1$s\").getDeclaredField(\"%2$s\");%n", getRequestedClassName(clazz), f.getName());
+        System.out.printf("    field = Class.forName(\"%1$s\").getDeclaredField(\"%2$s\");%n", SpecCheckUtilities.getRequestedClassName(clazz), f.getName());
         System.out.println("    fields.remove(field);");
         System.out.println("  } catch (NoSuchFieldException e) {}");
       }
@@ -338,11 +329,11 @@ public class SpecCheckGenerator {
 
     Specified annotation = clazz.getAnnotation(org.twodee.speccheck.Specified.class);
     if (annotation == null || !annotation.allowUnspecifiedPublicConstants()) {
-      System.out.println("      Assert.assertTrue(String.format(\"Field " + getRequestedClassName(clazz) + ".%1$s is not in the specification. Any static fields you add should be private.\", actual.getName()), Modifier.isPrivate(actual.getModifiers()) || Modifier.isProtected(actual.getModifiers()));");
+      System.out.println("      Assert.assertTrue(String.format(\"Field " + SpecCheckUtilities.getRequestedClassName(clazz) + ".%1$s is not in the specification. Any static fields you add should be private.\", actual.getName()), Modifier.isPrivate(actual.getModifiers()) || Modifier.isProtected(actual.getModifiers()));");
     }
 
     System.out.println("    } else {");
-    System.out.println("      Assert.assertTrue(\"Instance variables must be private (or possibly protected). " + getRequestedClassName(clazz) + ".\" + actual.getName() + \" is not. The only public variables should be specified constants, which must be static and final.\", Modifier.isPrivate(actual.getModifiers()) || Modifier.isProtected(actual.getModifiers()));");
+    System.out.println("      Assert.assertTrue(\"Instance variables must be private (or possibly protected). " + SpecCheckUtilities.getRequestedClassName(clazz) + ".\" + actual.getName() + \" is not. The only public variables should be specified constants, which must be static and final.\", Modifier.isPrivate(actual.getModifiers()) || Modifier.isProtected(actual.getModifiers()));");
     System.out.println("    }");
     System.out.println("  }");
   }
@@ -373,9 +364,9 @@ public class SpecCheckGenerator {
         // may
         // be named wrong or the arguments might be wrong.
         System.out.println("  try {");
-        System.out.printf("    method = Class.forName(\"%1$s\").getDeclaredMethod(\"%2$s\", new Class<?>[]{%3$s});%n", getRequestedClassName(clazz), m.getName(), list);
+        System.out.printf("    method = Class.forName(\"%1$s\").getDeclaredMethod(\"%2$s\", new Class<?>[]{%3$s});%n", SpecCheckUtilities.getRequestedClassName(clazz), m.getName(), list);
         System.out.println("  } catch (NoSuchMethodException e) {");
-        System.out.printf("    Assert.fail(\"You need a %1$s method in class %4$s taking %2$d argument%3$s", m.getName(), types.length, (types.length == 1 ? "" : "s"), getRequestedClassName(clazz));
+        System.out.printf("    Assert.fail(\"You need a %1$s method in class %4$s taking %2$d argument%3$s", m.getName(), types.length, (types.length == 1 ? "" : "s"), SpecCheckUtilities.getRequestedClassName(clazz));
         if (types.length > 0) {
           System.out.printf(", having type%1$s %2$s", types.length == 1 ? "" : "s", readableList);
         }
@@ -383,23 +374,23 @@ public class SpecCheckGenerator {
         System.out.println("  }");
 
         // Also verify return type and modifiers are correct.
-        System.out.printf("  Assert.assertEquals(\"Your method %1$s(%2$s) in class %4$s has the wrong return type.\", %3$s.class, method.getReturnType());%n", m.getName(), readableList, m.getReturnType().getCanonicalName(), getRequestedClassName(clazz));
-        System.out.printf("  Assert.assertTrue(\"The modifiers for method %1$s(%2$s) in class %4$s are not correct. \" + SpecCheckUtilities.getModifierDifference(%3$d, method.getModifiers()), %3$d == method.getModifiers());%n", m.getName(), readableList, m.getModifiers(), getRequestedClassName(clazz));
+        System.out.printf("  Assert.assertEquals(\"Your method %1$s(%2$s) in class %4$s has the wrong return type.\", %3$s.class, method.getReturnType());%n", m.getName(), readableList, m.getReturnType().getCanonicalName(), SpecCheckUtilities.getRequestedClassName(clazz));
+        System.out.printf("  Assert.assertTrue(\"The modifiers for method %1$s(%2$s) in class %4$s are not correct. \" + SpecCheckUtilities.getModifierDifference(%3$d, method.getModifiers()), %3$d == method.getModifiers());%n", m.getName(), readableList, m.getModifiers(), SpecCheckUtilities.getRequestedClassName(clazz));
 
         Class<?>[] exceptions = m.getAnnotation(Specified.class).mustThrow();
         System.out.println("  exceptions = java.util.Arrays.asList(method.getExceptionTypes());");
         for (Class<?> exception : exceptions) {
-          System.out.printf("  Assert.assertTrue(\"The specification requires method %1$s(%2$s) in class %4$s to throw %3$s.\", exceptions.contains(%3$s.class));%n", m.getName(), readableList, getRequestedClassName(exception), getRequestedClassName(clazz));
+          System.out.printf("  Assert.assertTrue(\"The specification requires method %1$s(%2$s) in class %4$s to throw %3$s.\", exceptions.contains(%3$s.class));%n", m.getName(), readableList, SpecCheckUtilities.getRequestedClassName(exception), SpecCheckUtilities.getRequestedClassName(clazz));
         }
 
         exceptions = m.getAnnotation(Specified.class).mustNotThrow();
         String blacklist = "";
         for (Class<?> exception : exceptions) {
-          blacklist += getRequestedClassName(exception) + ".class, ";
+          blacklist += SpecCheckUtilities.getRequestedClassName(exception) + ".class, ";
         }
         System.out.println("  outlawedExceptions = java.util.Arrays.asList(new Class<?>[]{" + blacklist + "});");
         System.out.println("  for (Class<?> exception : exceptions) {");
-        System.out.printf("    Assert.assertFalse(\"The specification requires method %1$s(%2$s) in class %3$s to handle and not throw \" + exception.getName() + \".\", outlawedExceptions.contains(exception));%n", m.getName(), readableList, getRequestedClassName(clazz));
+        System.out.printf("    Assert.assertFalse(\"The specification requires method %1$s(%2$s) in class %3$s to handle and not throw \" + exception.getName() + \".\", outlawedExceptions.contains(exception));%n", m.getName(), readableList, SpecCheckUtilities.getRequestedClassName(clazz));
         System.out.println("  }");
       }
     }
@@ -432,9 +423,9 @@ public class SpecCheckGenerator {
         // may
         // be named wrong or the arguments might be wrong.
         System.out.println("  try {");
-        System.out.printf("    ctor = Class.forName(\"%1$s\").getDeclaredConstructor(new Class<?>[]{%2$s});%n", getRequestedClassName(clazz), list);
+        System.out.printf("    ctor = Class.forName(\"%1$s\").getDeclaredConstructor(new Class<?>[]{%2$s});%n", SpecCheckUtilities.getRequestedClassName(clazz), list);
         System.out.println("  } catch (NoSuchMethodException e) {");
-        System.out.printf("    Assert.fail(\"You need a constructor in class %1$s taking %2$d argument%3$s", getRequestedClassName(clazz), types.length, (types.length == 1 ? "" : "s"));
+        System.out.printf("    Assert.fail(\"You need a constructor in class %1$s taking %2$d argument%3$s", SpecCheckUtilities.getRequestedClassName(clazz), types.length, (types.length == 1 ? "" : "s"));
         if (types.length > 0) {
           System.out.printf(", having type%1$s %2$s", types.length == 1 ? "" : "s", readableList);
         }
@@ -447,13 +438,13 @@ public class SpecCheckGenerator {
         Class<?>[] exceptions = ctor.getAnnotation(Specified.class).mustThrow();
         System.out.println("  exceptions = java.util.Arrays.asList(ctor.getExceptionTypes());");
         for (Class<?> exception : exceptions) {
-          System.out.printf("  Assert.assertTrue(\"The specification requires constructor %1$s(%2$s) to throw %3$s.\", exceptions.contains(%3$s.class));%n", ctor.getName(), readableList, getRequestedClassName(exception));
+          System.out.printf("  Assert.assertTrue(\"The specification requires constructor %1$s(%2$s) to throw %3$s.\", exceptions.contains(%3$s.class));%n", ctor.getName(), readableList, SpecCheckUtilities.getRequestedClassName(exception));
         }
 
         exceptions = ctor.getAnnotation(Specified.class).mustNotThrow();
         String blacklist = "";
         for (Class<?> exception : exceptions) {
-          blacklist += getRequestedClassName(exception) + ".class, ";
+          blacklist += SpecCheckUtilities.getRequestedClassName(exception) + ".class, ";
         }
         System.out.println("  outlawedExceptions = java.util.Arrays.asList(new Class<?>[]{" + blacklist + "});");
         System.out.println("  for (Class<?> exception : exceptions) {");
@@ -485,15 +476,15 @@ public class SpecCheckGenerator {
         // Look for expected field in actual class. If we fail, then the field
         // may be named wrong.
         System.out.println("  try {");
-        System.out.printf("    field = Class.forName(\"%1$s\").getDeclaredField(\"%2$s\");%n", getRequestedClassName(clazz), f.getName());
+        System.out.printf("    field = Class.forName(\"%1$s\").getDeclaredField(\"%2$s\");%n", SpecCheckUtilities.getRequestedClassName(clazz), f.getName());
         System.out.println("  } catch (NoSuchFieldException e) {");
-        System.out.printf("    Assert.fail(\"You need a field named %1$s in class %2$s.\");%n", f.getName(), getRequestedClassName(clazz));
+        System.out.printf("    Assert.fail(\"You need a field named %1$s in class %2$s.\");%n", f.getName(), SpecCheckUtilities.getRequestedClassName(clazz));
         System.out.println("  }");
         
-        System.out.printf("  Assert.assertEquals(\"Field %1$s.%2$s is of the wrong type.\", %3$s.class, field.getType());%n", getRequestedClassName(clazz), f.getName(), f.getType().getCanonicalName());
+        System.out.printf("  Assert.assertEquals(\"Field %1$s.%2$s is of the wrong type.\", %3$s.class, field.getType());%n", SpecCheckUtilities.getRequestedClassName(clazz), f.getName(), f.getType().getCanonicalName());
 
         // Also verify modifiers are correct.
-        System.out.printf("  Assert.assertTrue(\"The modifiers for field %1$s in class %3$s are not correct. \" + SpecCheckUtilities.getModifierDifference(%2$d, field.getModifiers()), %2$d == field.getModifiers());%n", f.getName(), f.getModifiers(), getRequestedClassName(clazz));
+        System.out.printf("  Assert.assertTrue(\"The modifiers for field %1$s in class %3$s are not correct. \" + SpecCheckUtilities.getModifierDifference(%2$d, field.getModifiers()), %2$d == field.getModifiers());%n", f.getName(), f.getModifiers(), SpecCheckUtilities.getRequestedClassName(clazz));
       }
     }
   }
@@ -513,7 +504,7 @@ public class SpecCheckGenerator {
    */
   private static String getReadableClassName(Class<?> clazz) {
     Pattern p = Pattern.compile("(\\.|^)(\\w)");
-    Matcher m = p.matcher(getRequestedClassName(clazz));
+    Matcher m = p.matcher(SpecCheckUtilities.getRequestedClassName(clazz));
     StringBuffer sb = new StringBuffer();
     while (m.find()) {
       m.appendReplacement(sb, "");
