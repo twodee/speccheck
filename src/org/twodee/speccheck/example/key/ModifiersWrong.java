@@ -9,6 +9,6 @@ public abstract class ModifiersWrong {
   public abstract void whistle();
   
   public static void main(String[] args) throws ClassNotFoundException {
-    SpecCheckGenerator.generateInto("org.twodee.speccheck.example.key.ModifiersWrongSpecChecker", ModifiersWrong.class);
+    new SpecCheckGenerator().generateInto("org.twodee.speccheck.example.key.ModifiersWrongSpecChecker", ModifiersWrong.class);
   }
 }

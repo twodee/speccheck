@@ -11,6 +11,6 @@ public class BadReturnType {
   }
 
   public static void main(String[] args) throws ClassNotFoundException {
-    SpecCheckGenerator.generateInto("org.twodee.speccheck.example.key.BadReturnTypeSpecChecker", BadReturnType.class);
+    new SpecCheckGenerator().generateInto("org.twodee.speccheck.example.key.BadReturnTypeSpecChecker", BadReturnType.class);
   }
 }

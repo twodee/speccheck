@@ -24,8 +24,12 @@ import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
+import org.twodee.speccheck.utilities.SpecCheckZipper;
 
 public class SpecChecker {
+  private static final String tag = "hw";
+  private static final String[] filesToZip = {};
+
   public static void main(String[] args) {
     SpecCheck.testAsStudent(TestSuite.class);
   }
@@ -70,10 +74,9 @@ public class SpecChecker {
      * 
      * @param tester
      * SpecChecker class, assumed to contain at least one JUnit test.
-     * @return A message containing the results of running the tests.
      */
-    public static String testAsGrader(Class<?> tester) {
-      return run(tester, false);
+    public static void testAsGrader(Class<?> tester) {
+      run(tester, false);
     }
 
     /**
@@ -82,10 +85,12 @@ public class SpecChecker {
      * 
      * @param tester
      * Class containing JUnit tests.
-     * @return Message indicating how many tests passed.
      */
-    public static String testAsStudent(Class<?> tester) {
-      return run(tester, true);
+    public static void testAsStudent(Class<?> tester) {
+      SpecCheckTestResults results = run(tester, true);
+      if (results.getSuccessesCount() == results.getPossibleCount() && results.getPossibleCount() > 0 && filesToZip.length > 0) {
+        SpecCheckZipper.zip(tag, null, filesToZip);
+      }
     }
 
     /**
@@ -98,12 +103,12 @@ public class SpecChecker {
      * Whether or not to be wordy in diagnostic messages.
      * @return Message indicating how many tests passed.
      */
-    private static String run(Class<?> tester,
-                              boolean isVerbose) {
+    private static SpecCheckTestResults run(Class<?> tester,
+                                            boolean isVerbose) {
       try {
         return evaluateTests(tester, isVerbose);
       } catch (Error e) {
-        return "Tests couldn't be run. Did you add JUnit to your project?";
+        return new SpecCheckTestResults("Tests couldn't be run. Did you add JUnit to your project?", 0, 0);
       }
     }
 
@@ -115,8 +120,8 @@ public class SpecChecker {
      * 
      * @return A message indicating a score and how many tests pass.
      */
-    public static String evaluateTests(Class<?> tester,
-                                       boolean isVerbose) {
+    public static SpecCheckTestResults evaluateTests(Class<?> tester,
+                                                     boolean isVerbose) {
       JUnitCore core = new JUnitCore();
       Request request = Request.aClass(tester);
       request = request.sortWith(new SpecCheckTestComparator());
@@ -124,7 +129,7 @@ public class SpecChecker {
       core.addListener(listener);
       core.run(request);
 
-      return listener.getScoreMessage();
+      return listener.getResults();
     }
   }
 
@@ -274,6 +279,32 @@ public class SpecChecker {
     }
   }
 
+  static class SpecCheckTestResults {
+    private String message;
+    private int nSuccesses;
+    private int nPossible;
+
+    public SpecCheckTestResults(String message,
+                                int nSuccesses,
+                                int nPossible) {
+      this.message = message;
+      this.nSuccesses = nSuccesses;
+      this.nPossible = nPossible;
+    }
+
+    public String getMessage() {
+      return message;
+    }
+
+    public int getSuccessesCount() {
+      return nSuccesses;
+    }
+
+    public int getPossibleCount() {
+      return nPossible;
+    }
+  }
+
   /**
    * A custom JUnit RunListener. We offer our own so that we can optionally add
    * points to a student's score when tests pass.
@@ -291,7 +322,7 @@ public class SpecChecker {
 
     private PrintStream oldOut;
 
-    private String scoreMessage;
+    private SpecCheckTestResults results;
 
     public SpecCheckRunListener(boolean isVerbose) {
       this.isVerbose = isVerbose;
@@ -302,7 +333,6 @@ public class SpecChecker {
       super.testRunStarted(description);
       testToPoints = new HashMap<Description, Integer>();
       nPointsPossible = 0;
-      scoreMessage = null;
       oldOut = null;
 
       if (!isVerbose) {
@@ -316,6 +346,7 @@ public class SpecChecker {
 
     /**
      * Triggered when a new test has been started. If tagged with
+     * 
      * @SpecCheckTest, the test's points are added to the total.
      */
     @Override
@@ -387,7 +418,7 @@ public class SpecChecker {
       int nFailed = result.getFailureCount();
       final String wrapPattern = "(.{50,}?) ";
 
-      scoreMessage = String.format("%d out of %d tests pass.", nTests - nFailed, nTests);
+      String scoreMessage = String.format("%d out of %d tests pass.", nTests - nFailed, nTests);
       if (getScorePossible() > 0) {
         scoreMessage = String.format("You received %d/%d points. %s", getScore(), getScorePossible(), scoreMessage);
       }
@@ -414,10 +445,12 @@ public class SpecChecker {
       if (getScorePossible() != 0) {
         scoreMessage = "TOTAL: " + getScore() + "/" + getScorePossible();
       }
+
+      results = new SpecCheckTestResults(scoreMessage, nTests - nFailed, nTests);
     }
 
-    public String getScoreMessage() {
-      return scoreMessage;
+    public SpecCheckTestResults getResults() {
+      return results;
     }
   }
 

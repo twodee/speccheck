@@ -9,6 +9,6 @@ public class WrongFieldType {
   public static final Integer foo = 5;
     
   public static void main(String[] args) throws ClassNotFoundException {
-    SpecCheckGenerator.generateInto("org.twodee.speccheck.example.key.WrongFieldTypeSpecChecker", WrongFieldType.class);
+    new SpecCheckGenerator().generateInto("org.twodee.speccheck.example.key.WrongFieldTypeSpecChecker", WrongFieldType.class);
   }
 }

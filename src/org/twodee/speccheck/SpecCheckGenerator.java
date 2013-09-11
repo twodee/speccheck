@@ -19,13 +19,15 @@
 package org.twodee.speccheck;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -44,13 +46,50 @@ import java.util.regex.Pattern;
  * @author cjohnson
  */
 public class SpecCheckGenerator {
-  private static String get(Class<?>... clazzes) throws ClassNotFoundException {
+  private String unitTests = null;
+  private String tag;
+  private ArrayList<String> filesToZip = new ArrayList<String>();
+
+  public SpecCheckGenerator() {
+  }
+
+  public SpecCheckGenerator(String pathToUnitTests) throws IOException {
+    String body = slurp(pathToUnitTests);
+    Pattern pattern = Pattern.compile("^public class .*? \\{(.*)^\\}", Pattern.DOTALL | Pattern.MULTILINE);
+    Matcher matcher = pattern.matcher(body);
+    if (matcher.find()) {
+      unitTests = matcher.group(1);
+    }
+  }
+
+  public void setTag(String tag) {
+    this.tag = tag;
+  }
+
+  public void setFilesToZip(File... files) {
+    for (File f : files) {
+      if (!f.getName().equals("speccheck")) {
+        if (f.isDirectory()) {
+          setFilesToZip(f.listFiles());
+        } else {
+          filesToZip.add(f.getPath());
+        }
+      }
+    }
+  }
+
+  private String get(Class<?>... clazzes) throws ClassNotFoundException {
     ByteArrayOutputStream newOut = new ByteArrayOutputStream();
     PrintStream oldOut = System.out;
     String generated = null;
-    
+
     try {
       System.setOut(new PrintStream(newOut));
+
+      if (unitTests != null) {
+        System.out.println(unitTests);
+      }
+
       SpecCheckGenerator.generateClassExistenceTest(clazzes);
       for (Class<?> clazz : clazzes) {
         SpecCheckGenerator.generateClassTest(clazz);
@@ -64,16 +103,16 @@ public class SpecCheckGenerator {
         e.printStackTrace();
       }
     }
-    
+
     return generated;
   }
 
-  public static void generate(Class<?>... clazzes) throws ClassNotFoundException {
+  public void generate(Class<?>... clazzes) throws ClassNotFoundException {
     System.out.println(get(clazzes));
   }
 
-  public static void generateInto(String checkerQualifiedName,
-                                  Class<?>... clazzes) throws ClassNotFoundException {
+  public void generateInto(String checkerQualifiedName,
+                           Class<?>... clazzes) throws ClassNotFoundException {
     String generated = get(clazzes);
     int iLastDot = checkerQualifiedName.lastIndexOf('.');
     String checkerPackageLine = "";
@@ -86,9 +125,17 @@ public class SpecCheckGenerator {
     System.out.println(generated);
   }
 
-  private static String substitute(String cases) throws IOException {
-    String generated = slurp("src/org/twodee/speccheck/SpecChecker.java");
+  private String substitute(String cases) throws IOException {
+    String generated = slurp("/Users/johnch/.git/speccheck/src/org/twodee/speccheck/SpecChecker.java");
     generated = generated.replace("// --- GENERATED TESTS GO HERE ---", cases);
+
+    generated = generated.replaceFirst("tag = \"hw\"", "tag = \"" + tag + "\"");
+    String filesCommaSeparated = "";
+    for (String path : filesToZip) {
+      filesCommaSeparated += "\"" + path + "\", ";
+    }
+    generated = generated.replaceFirst("filesToZip = \\{\\}", "filesToZip = {" + filesCommaSeparated + "}");
+
     return generated;
   }
 
@@ -102,6 +149,7 @@ public class SpecCheckGenerator {
       sb.append(new String(buffer, 0, nRead));
     }
 
+    in.close();
     return sb.toString();
   }
 

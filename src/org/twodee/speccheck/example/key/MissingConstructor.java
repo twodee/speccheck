@@ -10,6 +10,6 @@ public class MissingConstructor {
   }
 
   public static void main(String[] args) throws ClassNotFoundException {
-    SpecCheckGenerator.generateInto("org.twodee.speccheck.example.key.MissingConstructorSpecChecker", MissingConstructor.class);
+    new SpecCheckGenerator().generateInto("org.twodee.speccheck.example.key.MissingConstructorSpecChecker", MissingConstructor.class);
   }
 }

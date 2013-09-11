@@ -6,6 +6,6 @@ import org.twodee.speccheck.Specified;
 @Specified(inPackage = "org.twodee.speccheck.example", checkSuper = true)
 public class SupertypeWrong extends RuntimeException {
   public static void main(String[] args) throws ClassNotFoundException {
-    SpecCheckGenerator.generateInto("org.twodee.speccheck.example.key.SupertypeWrongSpecChecker", SupertypeWrong.class);
+    new SpecCheckGenerator().generateInto("org.twodee.speccheck.example.key.SupertypeWrongSpecChecker", SupertypeWrong.class);
   }
 }
