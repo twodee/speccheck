@@ -15,7 +15,8 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 public class SpecCheckZipper {
-  public static void zip(String tag,
+  public static void zip(boolean isPerfect,
+                         String tag,
                          File hwDirectory,
                          String... requiredFiles) {
     ArrayList<File> filesToZip = getFilesToZip(hwDirectory, requiredFiles);
@@ -23,7 +24,8 @@ public class SpecCheckZipper {
     // Create archive.
     boolean ok = false;
     try {
-      int opt = JOptionPane.showConfirmDialog(null, "Create ZIP to submit?", "Create ZIP", JOptionPane.YES_NO_OPTION);
+      String m = isPerfect ? "All tests pass." : "Not all tests pass.";
+      int opt = JOptionPane.showConfirmDialog(null, m + " Create ZIP to submit?", "Create ZIP", JOptionPane.YES_NO_OPTION);
       if (opt == JOptionPane.YES_OPTION) {
         System.out.println("Choose a *directory* in which to store " + tag + ".zip.");
         ok = zip(tag, filesToZip);

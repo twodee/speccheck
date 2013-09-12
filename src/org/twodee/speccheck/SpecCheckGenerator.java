@@ -68,7 +68,7 @@ public class SpecCheckGenerator {
 
   public void setFilesToZip(File... files) {
     for (File f : files) {
-      if (!f.getName().equals("speccheck")) {
+      if (!f.getName().equals("speccheck") && !f.getName().equals("CVS")) {
         if (f.isDirectory()) {
           setFilesToZip(f.listFiles());
         } else {

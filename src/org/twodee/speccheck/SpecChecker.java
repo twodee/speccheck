@@ -27,6 +27,7 @@ import org.junit.runner.notification.RunListener;
 import org.twodee.speccheck.utilities.SpecCheckZipper;
 
 public class SpecChecker {
+  private static final int MAX_SPECCHECK_TESTS_ORDER = 50;
   private static final String tag = "hw";
   private static final String[] filesToZip = {};
 
@@ -37,24 +38,6 @@ public class SpecChecker {
   public static class TestSuite {
     // --- GENERATED TESTS GO HERE ---
   }
-
-  /*
-   * SpecCheck - a system for automatically generating tests for
-   * interface-conformance Copyright (C) 2012 Chris Johnson
-   * 
-   * This program is free software: you can redistribute it and/or modify it
-   * under the terms of the GNU General Public License as published by the Free
-   * Software Foundation, either version 3 of the License, or (at your option)
-   * any later version.
-   * 
-   * This program is distributed in the hope that it will be useful, but WITHOUT
-   * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-   * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-   * more details.
-   * 
-   * You should have received a copy of the GNU General Public License along
-   * with this program. If not, see <http://www.gnu.org/licenses/>.
-   */
 
   /**
    * A utility class for running JUnit tests and reporting any failures.
@@ -76,7 +59,7 @@ public class SpecChecker {
      * SpecChecker class, assumed to contain at least one JUnit test.
      */
     public static void testAsGrader(Class<?> tester) {
-      run(tester, false);
+      runTestSuite(tester, false);
     }
 
     /**
@@ -87,9 +70,9 @@ public class SpecChecker {
      * Class containing JUnit tests.
      */
     public static void testAsStudent(Class<?> tester) {
-      SpecCheckTestResults results = run(tester, true);
-      if (results.getSuccessesCount() == results.getPossibleCount() && results.getPossibleCount() > 0 && filesToZip.length > 0) {
-        SpecCheckZipper.zip(tag, null, filesToZip);
+      SpecCheckTestResults results = runTestSuite(tester, true);
+      if (results.hasSpecCheckTests() && results.isSpecCompliant() && filesToZip.length > 0) {
+        SpecCheckZipper.zip(results.isPerfect(), tag, null, filesToZip);
       }
     }
 
@@ -103,12 +86,12 @@ public class SpecChecker {
      * Whether or not to be wordy in diagnostic messages.
      * @return Message indicating how many tests passed.
      */
-    private static SpecCheckTestResults run(Class<?> tester,
-                                            boolean isVerbose) {
+    private static SpecCheckTestResults runTestSuite(Class<?> tester,
+                                                     boolean isVerbose) {
       try {
         return evaluateTests(tester, isVerbose);
       } catch (Error e) {
-        return new SpecCheckTestResults("Tests couldn't be run. Did you add JUnit to your project?", 0, 0);
+        return new SpecCheckTestResults("Tests couldn't be run. Did you add JUnit to your project?", 0, 0, 0, 0);
       }
     }
 
@@ -148,7 +131,7 @@ public class SpecChecker {
      * 
      * @return
      */
-    int order() default 20;
+    int order() default MAX_SPECCHECK_TESTS_ORDER + 1;
   }
 
   /**
@@ -281,27 +264,53 @@ public class SpecChecker {
 
   static class SpecCheckTestResults {
     private String message;
-    private int nSuccesses;
-    private int nPossible;
+    private int nTestsPassed;
+    private int nTests;
+    private int nSpecCheckTestsPassed;
+    private int nSpecCheckTests;
 
     public SpecCheckTestResults(String message,
-                                int nSuccesses,
-                                int nPossible) {
+                                int nTestsPassed,
+                                int nTests,
+                                int nSpecCheckTestsPassed,
+                                int nSpecCheckTests) {
       this.message = message;
-      this.nSuccesses = nSuccesses;
-      this.nPossible = nPossible;
+      this.nTestsPassed = nTestsPassed;
+      this.nTests = nTests;
+      this.nSpecCheckTestsPassed = nSpecCheckTestsPassed;
+      this.nSpecCheckTests = nSpecCheckTests;
+    }
+
+    public int getSpecCheckTestsCount() {
+      return nSpecCheckTests;
+    }
+
+    public int getSpecCheckTestsPassedCount() {
+      return nSpecCheckTestsPassed;
     }
 
     public String getMessage() {
       return message;
     }
 
-    public int getSuccessesCount() {
-      return nSuccesses;
+    public int getPassedCount() {
+      return nTestsPassed;
     }
 
-    public int getPossibleCount() {
-      return nPossible;
+    public int getTestCount() {
+      return nTests;
+    }
+
+    public boolean isPerfect() {
+      return nTests == nTestsPassed;
+    }
+
+    public boolean hasSpecCheckTests() {
+      return nSpecCheckTests > 0;
+    }
+
+    public boolean isSpecCompliant() {
+      return nSpecCheckTests == nSpecCheckTestsPassed;
     }
   }
 
@@ -322,10 +331,14 @@ public class SpecChecker {
 
     private PrintStream oldOut;
 
+    private int nSpecCheckTests;
+    private int nSpecCheckTestsFailed;
+
     private SpecCheckTestResults results;
 
     public SpecCheckRunListener(boolean isVerbose) {
       this.isVerbose = isVerbose;
+
     }
 
     @Override
@@ -333,6 +346,8 @@ public class SpecChecker {
       super.testRunStarted(description);
       testToPoints = new HashMap<Description, Integer>();
       nPointsPossible = 0;
+      nSpecCheckTests = 0;
+      nSpecCheckTestsFailed = 0;
       oldOut = null;
 
       if (!isVerbose) {
@@ -356,10 +371,12 @@ public class SpecChecker {
         SpecCheckTest anno = m.getAnnotation(SpecCheckTest.class);
         if (anno != null) {
           // I put the test/points in the map here, but it may be taken out
-          // later
-          // if the test ends up failing.
+          // later if the test ends up failing.
           testToPoints.put(description, anno.nPoints());
           nPointsPossible += anno.nPoints();
+          if (anno.order() <= MAX_SPECCHECK_TESTS_ORDER) {
+            ++nSpecCheckTests;
+          }
         }
       } catch (SecurityException e) {
         e.printStackTrace();
@@ -378,6 +395,17 @@ public class SpecChecker {
       // Earlier we blindly added the test to the points map. Take it out now
       // because those points weren't earned.
       testToPoints.remove(failure.getDescription());
+      try {
+        Method m = SpecCheckUtilities.getMethod(failure.getDescription());
+        SpecCheckTest anno = m.getAnnotation(SpecCheckTest.class);
+        if (anno != null && anno.order() <= MAX_SPECCHECK_TESTS_ORDER) {
+          ++nSpecCheckTestsFailed;
+        }
+      } catch (NoSuchMethodException e) {
+        e.printStackTrace();
+      } catch (ClassNotFoundException e) {
+        e.printStackTrace();
+      }
     }
 
     /**
@@ -415,16 +443,16 @@ public class SpecChecker {
       }
 
       int nTests = result.getRunCount();
-      int nFailed = result.getFailureCount();
+      int nTestsFailed = result.getFailureCount();
       final String wrapPattern = "(.{50,}?) ";
 
-      String scoreMessage = String.format("%d out of %d tests pass.", nTests - nFailed, nTests);
+      String scoreMessage = String.format("%d out of %d tests pass.", nTests - nTestsFailed, nTests);
       if (getScorePossible() > 0) {
         scoreMessage = String.format("You received %d/%d points. %s", getScore(), getScorePossible(), scoreMessage);
       }
       System.out.printf("%s%n%n", scoreMessage);
 
-      if (nFailed > 0) {
+      if (nTestsFailed > 0) {
         for (Failure f : result.getFailures()) {
           System.out.println("PROBLEM: ");
           if (!f.getException().getClass().equals(AssertionError.class) &&
@@ -446,7 +474,7 @@ public class SpecChecker {
         scoreMessage = "TOTAL: " + getScore() + "/" + getScorePossible();
       }
 
-      results = new SpecCheckTestResults(scoreMessage, nTests - nFailed, nTests);
+      results = new SpecCheckTestResults(scoreMessage, nTests - nTestsFailed, nTests, nSpecCheckTests - nSpecCheckTestsFailed, nSpecCheckTests);
     }
 
     public SpecCheckTestResults getResults() {
