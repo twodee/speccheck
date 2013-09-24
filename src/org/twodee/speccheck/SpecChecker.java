@@ -90,8 +90,12 @@ public class SpecChecker {
                                                      boolean isVerbose) {
       try {
         return evaluateTests(tester, isVerbose);
+      } catch (NoClassDefFoundError e) {
+        System.out.printf("A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.", e.getMessage());
+        return new SpecCheckTestResults("Missing class", 0, 0, 0, 0);
       } catch (Error e) {
-        return new SpecCheckTestResults("Tests couldn't be run. Did you add JUnit to your project?", 0, 0, 0, 0);
+        System.out.println("Tests couldn't be run. Did you add JUnit to your project?");
+        return new SpecCheckTestResults("No JUnit available.", 0, 0, 0, 0);
       }
     }
 

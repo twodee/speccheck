@@ -49,10 +49,15 @@ public class SpecCheckGenerator {
   private String unitTests = null;
   private String tag;
   private ArrayList<String> filesToZip = new ArrayList<String>();
-
+  private String pathToSource = null;
+  
   public SpecCheckGenerator() {
   }
 
+  public void setPathToSource(String path) {
+    pathToSource = path;
+  }
+  
   public SpecCheckGenerator(String pathToUnitTests) throws IOException {
     String body = slurp(pathToUnitTests);
     Pattern pattern = Pattern.compile("^public class .*? \\{(.*)^\\}", Pattern.DOTALL | Pattern.MULTILINE);
@@ -126,7 +131,7 @@ public class SpecCheckGenerator {
   }
 
   private String substitute(String cases) throws IOException {
-    String generated = slurp("/Users/johnch/.git/speccheck/src/org/twodee/speccheck/SpecChecker.java");
+    String generated = slurp(pathToSource + "/src/org/twodee/speccheck/SpecChecker.java");
     generated = generated.replace("// --- GENERATED TESTS GO HERE ---", cases);
 
     generated = generated.replaceFirst("tag = \"hw\"", "tag = \"" + tag + "\"");
