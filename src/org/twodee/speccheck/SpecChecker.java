@@ -1,7 +1,5 @@
 package org.twodee.speccheck;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Constructor;
@@ -12,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.Assert;
@@ -27,16 +26,20 @@ import org.junit.runner.notification.RunListener;
 import org.twodee.speccheck.utilities.SpecCheckZipper;
 
 public class SpecChecker {
-  private static final int MAX_SPECCHECK_TESTS_ORDER = 50;
   private static final String tag = "hw";
   private static final String[] filesToZip = {};
 
   public static void main(String[] args) {
-    SpecCheck.testAsStudent(TestSuite.class);
+    SpecCheck.testAsStudent();
   }
 
-  public static class TestSuite {
-    // --- GENERATED TESTS GO HERE ---
+  public static class SpecCheckPreTests {
+  }
+
+  public static class SpecCheckInterfaceTests {
+  }
+
+  public static class SpecCheckUnitTests {
   }
 
   /**
@@ -52,25 +55,14 @@ public class SpecChecker {
     }
 
     /**
-     * Run the JUnit tests in the specified SpecChecker class, customizing
-     * output for grading.
-     * 
-     * @param tester
-     * SpecChecker class, assumed to contain at least one JUnit test.
-     */
-    public static void testAsGrader(Class<?> tester) {
-      runTestSuite(tester, false);
-    }
-
-    /**
      * Run the JUnit tests contained in the specified class, customizing output
      * for the student working on an assignment.
      * 
      * @param tester
      * Class containing JUnit tests.
      */
-    public static void testAsStudent(Class<?> tester) {
-      SpecCheckTestResults results = runTestSuite(tester, true);
+    public static void testAsStudent() {
+      SpecCheckTestResults results = runTestSuite();
       if (results.hasSpecCheckTests() && results.isSpecCompliant() && filesToZip.length > 0) {
         SpecCheckZipper.zip(results.isPerfect(), tag, null, filesToZip);
       }
@@ -86,16 +78,15 @@ public class SpecChecker {
      * Whether or not to be wordy in diagnostic messages.
      * @return Message indicating how many tests passed.
      */
-    private static SpecCheckTestResults runTestSuite(Class<?> tester,
-                                                     boolean isVerbose) {
+    private static SpecCheckTestResults runTestSuite() {
       try {
-        return evaluateTests(tester, isVerbose);
+        return evaluateTests();
       } catch (NoClassDefFoundError e) {
         System.out.printf("A class by the name of %1$s could not be found. Check case, spelling, and that you created your class in the right package.", e.getMessage());
-        return new SpecCheckTestResults("Missing class", 0, 0, 0, 0);
+        return new SpecCheckTestResults();
       } catch (Error e) {
         System.out.println("Tests couldn't be run. Did you add JUnit to your project?");
-        return new SpecCheckTestResults("No JUnit available.", 0, 0, 0, 0);
+        return new SpecCheckTestResults();
       }
     }
 
@@ -107,357 +98,337 @@ public class SpecChecker {
      * 
      * @return A message indicating a score and how many tests pass.
      */
-    public static SpecCheckTestResults evaluateTests(Class<?> tester,
-                                                     boolean isVerbose) {
+    public static SpecCheckTestResults evaluateTests() {
+      SpecCheckRunListener listener = new SpecCheckRunListener();
+      SpecCheckTestResults results = listener.getResults();
+
       JUnitCore core = new JUnitCore();
-      Request request = Request.aClass(tester);
-      request = request.sortWith(new SpecCheckTestComparator());
-      SpecCheckRunListener listener = new SpecCheckRunListener(isVerbose);
       core.addListener(listener);
+
+      Request request = Request.aClass(SpecCheckPreTests.class);
+      request = request.sortWith(new SpecCheckTestComparator());
       core.run(request);
+      boolean isTotal = false;
 
-      return listener.getResults();
+      if (results.isPerfect()) {
+        request = Request.aClass(SpecCheckInterfaceTests.class);
+        request = request.sortWith(new SpecCheckTestComparator());
+        core.run(request);
+
+        if (results.isPerfect()) {
+          request = Request.aClass(SpecCheckUnitTests.class);
+          request = request.sortWith(new SpecCheckTestComparator());
+          core.run(request);
+          isTotal = true;
+        }
+      }
+
+      results.report(isTotal);
+
+      return results;
     }
   }
+}
 
-  @Retention(RetentionPolicy.RUNTIME)
-  @interface SpecCheckTest {
-    /**
-     * The number of points this test contributes to the student's final score
-     * if this test passes.
-     */
-    int nPoints() default 0;
+@Retention(RetentionPolicy.RUNTIME)
+@interface SpecCheckTest {
+  int MAX_SPECCHECK_TESTS_ORDER = 50;
 
-    /**
-     * An indicator of priority for this test. A lesser-numbered test runs
-     * before a greater-numbered test. Pure interface tests should be given a
-     * low number, like 0, so that they are executed first.
-     * 
-     * @return
-     */
-    int order() default MAX_SPECCHECK_TESTS_ORDER + 1;
+  /**
+   * The number of points this test contributes to the student's final score if
+   * this test passes.
+   */
+  int nPoints() default 0;
+
+  /**
+   * An indicator of priority for this test. A lesser-numbered test runs before
+   * a greater-numbered test. Pure interface tests should be given a low number,
+   * like 0, so that they are executed first.
+   * 
+   * @return
+   */
+  int order() default MAX_SPECCHECK_TESTS_ORDER + 1;
+}
+
+/**
+ * This class contains a number of helper methods for ripping apart JUnit data
+ * types into usable pieces.
+ * 
+ * @author cjohnson
+ */
+class SpecCheckUtilities {
+  /**
+   * Gets the method identified by the given Description.
+   * 
+   * @param d
+   * The description given by JUnit.
+   * @return The method
+   * @throws SecurityException
+   * @throws NoSuchMethodException
+   * @throws ClassNotFoundException
+   */
+  public static Method getMethod(Description d) throws SecurityException, NoSuchMethodException, ClassNotFoundException {
+    return Class.forName(getClassName(d)).getDeclaredMethod(getMethodName(d));
   }
 
   /**
-   * This class contains a number of helper methods for ripping apart JUnit data
-   * types into usable pieces.
+   * Gets the name of the class identified by the given Description.
    * 
-   * @author cjohnson
+   * @param d
+   * The description given by JUnit.
+   * @return The class name
    */
-  static class SpecCheckUtilities {
-    /**
-     * Gets the method identified by the given Description.
-     * 
-     * @param d
-     * The description given by JUnit.
-     * @return The method
-     * @throws SecurityException
-     * @throws NoSuchMethodException
-     * @throws ClassNotFoundException
-     */
-    public static Method getMethod(Description d) throws SecurityException, NoSuchMethodException, ClassNotFoundException {
-      return Class.forName(getClassName(d)).getDeclaredMethod(getMethodName(d));
-    }
-
-    /**
-     * Gets the name of the class identified by the given Description.
-     * 
-     * @param d
-     * The description given by JUnit.
-     * @return The class name
-     */
-    public static String getClassName(Description d) {
-      Matcher matcher = parseDescription(d);
-      return matcher.matches() ? matcher.group(2) : d.toString();
-    }
-
-    /**
-     * Gets the name of the method identified by the given Description.
-     * 
-     * @param d
-     * The description given by JUnit.
-     * @return The method name
-     */
-    public static String getMethodName(Description d) {
-      Matcher matcher = parseDescription(d);
-      if (matcher.matches()) {
-        return matcher.group(1);
-      } else {
-        return null;
-      }
-    }
-
-    /**
-     * Parses the JUnit Description and holds the results in a Matcher object.
-     * 
-     * @param d
-     * The description given by JUnit
-     * @return A Matcher holding the method and class names.
-     */
-    private static Matcher parseDescription(Description d) {
-      // The description has the form methodName(className).
-      return Pattern.compile("(.*)\\((.*)\\)").matcher(d.toString());
-    }
-
-    /**
-     * Gets a description of how the modifiers differ from what was expected/
-     * 
-     * @param expected
-     * The expected modifiers
-     * @param actual
-     * The actual modifiers observed
-     * @return A short description how actual differs from expected
-     */
-    public static String getModifierDifference(int expected,
-                                               int actual) {
-      String msg = "";
-
-      if (Modifier.isStatic(expected) != Modifier.isStatic(actual)) {
-        msg += "It should " + (Modifier.isStatic(actual) ? "not " : "") + "be static. ";
-      }
-
-      if (Modifier.isPublic(expected) != Modifier.isPublic(actual)) {
-        msg += "It should " + (Modifier.isPublic(actual) ? "not " : "") + "be public. ";
-      }
-
-      if (Modifier.isProtected(expected) != Modifier.isProtected(actual)) {
-        msg += "It should " + (Modifier.isProtected(actual) ? "not " : "") + "be protected. ";
-      }
-
-      if (Modifier.isPrivate(expected) != Modifier.isPrivate(actual)) {
-        msg += "It should " + (Modifier.isPrivate(actual) ? "not " : "") + "be private. ";
-      }
-
-      if (Modifier.isFinal(expected) != Modifier.isFinal(actual)) {
-        msg += "It should " + (Modifier.isFinal(actual) ? "not " : "") + "be final. ";
-      }
-
-      // For interfaces, we don't care if they are marked abstract. TODO: is
-      // there
-      // a better way to express this?
-      if (Modifier.isInterface(expected) != Modifier.isInterface(actual)) {
-        msg += "It should " + (Modifier.isInterface(actual) ? "not " : "") + "be an interface. ";
-      } else if (Modifier.isAbstract(expected) != Modifier.isAbstract(actual)) {
-        msg += "It should " + (Modifier.isAbstract(actual) ? "not " : "") + "be abstract. ";
-      }
-
-      return msg;
-    }
-
-    /**
-     * Get a comma-separated sequence of stringified class literals (i.e,
-     * "String.class, boolean.class") corresponding to the given array of class
-     * objects.
-     * 
-     * @param types
-     * Ordered list of classes for which a comma-separated String is created.
-     * 
-     * @return The comma-separated list of classes.
-     */
-    public static String getTypesList(Class<?>[] types) {
-      String list = "";
-      if (types.length > 0) {
-        list += types[0].getName() + ".class";
-        for (int i = 1; i < types.length; ++i) {
-          list += ", " + types[i].getName() + ".class";
-        }
-      }
-      return list;
-    }
+  public static String getClassName(Description d) {
+    Matcher matcher = parseDescription(d);
+    return matcher.matches() ? matcher.group(2) : d.toString();
   }
 
-  static class SpecCheckTestResults {
-    private String message;
-    private int nTestsPassed;
-    private int nTests;
-    private int nSpecCheckTestsPassed;
-    private int nSpecCheckTests;
-
-    public SpecCheckTestResults(String message,
-                                int nTestsPassed,
-                                int nTests,
-                                int nSpecCheckTestsPassed,
-                                int nSpecCheckTests) {
-      this.message = message;
-      this.nTestsPassed = nTestsPassed;
-      this.nTests = nTests;
-      this.nSpecCheckTestsPassed = nSpecCheckTestsPassed;
-      this.nSpecCheckTests = nSpecCheckTests;
-    }
-
-    public int getSpecCheckTestsCount() {
-      return nSpecCheckTests;
-    }
-
-    public int getSpecCheckTestsPassedCount() {
-      return nSpecCheckTestsPassed;
-    }
-
-    public String getMessage() {
-      return message;
-    }
-
-    public int getPassedCount() {
-      return nTestsPassed;
-    }
-
-    public int getTestCount() {
-      return nTests;
-    }
-
-    public boolean isPerfect() {
-      return nTests == nTestsPassed;
-    }
-
-    public boolean hasSpecCheckTests() {
-      return nSpecCheckTests > 0;
-    }
-
-    public boolean isSpecCompliant() {
-      return nSpecCheckTests == nSpecCheckTestsPassed;
+  /**
+   * Gets the name of the method identified by the given Description.
+   * 
+   * @param d
+   * The description given by JUnit.
+   * @return The method name
+   */
+  public static String getMethodName(Description d) {
+    Matcher matcher = parseDescription(d);
+    if (matcher.matches()) {
+      return matcher.group(1);
+    } else {
+      return null;
     }
   }
 
   /**
-   * A custom JUnit RunListener. We offer our own so that we can optionally add
-   * points to a student's score when tests pass.
+   * Parses the JUnit Description and holds the results in a Matcher object.
    * 
-   * @author cjohnson
+   * @param d
+   * The description given by JUnit
+   * @return A Matcher holding the method and class names.
    */
-  static class SpecCheckRunListener extends RunListener {
-    /** A map from a test to points earned for it */
-    private HashMap<Description, Integer> testToPoints;
+  private static Matcher parseDescription(Description d) {
+    // The description has the form methodName(className).
+    return Pattern.compile("(.*)\\((.*)\\)").matcher(d.toString());
+  }
 
-    /** The total number of points possible in this test suite */
-    private int nPointsPossible;
+  /**
+   * Gets a description of how the modifiers differ from what was expected/
+   * 
+   * @param expected
+   * The expected modifiers
+   * @param actual
+   * The actual modifiers observed
+   * @return A short description how actual differs from expected
+   */
+  public static String getModifierDifference(int expected,
+                                             int actual) {
+    String msg = "";
 
-    private boolean isVerbose;
-
-    private PrintStream oldOut;
-
-    private int nSpecCheckTests;
-    private int nSpecCheckTestsFailed;
-
-    private SpecCheckTestResults results;
-
-    public SpecCheckRunListener(boolean isVerbose) {
-      this.isVerbose = isVerbose;
-
+    if (Modifier.isStatic(expected) != Modifier.isStatic(actual)) {
+      msg += "It should " + (Modifier.isStatic(actual) ? "not " : "") + "be static. ";
     }
 
-    @Override
-    public void testRunStarted(Description description) throws Exception {
-      super.testRunStarted(description);
-      testToPoints = new HashMap<Description, Integer>();
-      nPointsPossible = 0;
-      nSpecCheckTests = 0;
-      nSpecCheckTestsFailed = 0;
-      oldOut = null;
-
-      if (!isVerbose) {
-        oldOut = System.out;
-        System.setOut(new PrintStream(new OutputStream() {
-          public void write(int b) {
-          }
-        }));
-      }
+    if (Modifier.isPublic(expected) != Modifier.isPublic(actual)) {
+      msg += "It should " + (Modifier.isPublic(actual) ? "not " : "") + "be public. ";
     }
 
-    /**
-     * Triggered when a new test has been started. If tagged with
-     * 
-     * @SpecCheckTest, the test's points are added to the total.
-     */
-    @Override
-    public void testStarted(Description description) {
-      try {
-        Method m = SpecCheckUtilities.getMethod(description);
-        SpecCheckTest anno = m.getAnnotation(SpecCheckTest.class);
-        if (anno != null) {
-          // I put the test/points in the map here, but it may be taken out
-          // later if the test ends up failing.
-          testToPoints.put(description, anno.nPoints());
-          nPointsPossible += anno.nPoints();
-          if (anno.order() <= MAX_SPECCHECK_TESTS_ORDER) {
-            ++nSpecCheckTests;
-          }
-        }
-      } catch (SecurityException e) {
-        e.printStackTrace();
-      } catch (NoSuchMethodException e) {
-        e.printStackTrace();
-      } catch (ClassNotFoundException e) {
-        e.printStackTrace();
-      }
+    if (Modifier.isProtected(expected) != Modifier.isProtected(actual)) {
+      msg += "It should " + (Modifier.isProtected(actual) ? "not " : "") + "be protected. ";
     }
 
-    /**
-     * Triggered when a test fails.
-     */
-    @Override
-    public void testFailure(Failure failure) {
-      // Earlier we blindly added the test to the points map. Take it out now
-      // because those points weren't earned.
-      testToPoints.remove(failure.getDescription());
-      try {
-        Method m = SpecCheckUtilities.getMethod(failure.getDescription());
-        SpecCheckTest anno = m.getAnnotation(SpecCheckTest.class);
-        if (anno != null && anno.order() <= MAX_SPECCHECK_TESTS_ORDER) {
-          ++nSpecCheckTestsFailed;
-        }
-      } catch (NoSuchMethodException e) {
-        e.printStackTrace();
-      } catch (ClassNotFoundException e) {
-        e.printStackTrace();
-      }
+    if (Modifier.isPrivate(expected) != Modifier.isPrivate(actual)) {
+      msg += "It should " + (Modifier.isPrivate(actual) ? "not " : "") + "be private. ";
     }
 
-    /**
-     * Gets the number of points earned. This number is only meaningful after
-     * the tests have been run.
-     * 
-     * @return Number of points earned.
-     */
-    private int getScore() {
-      int score = 0;
-
-      for (Integer nPoints : testToPoints.values()) {
-        score += nPoints;
-      }
-
-      return score;
+    if (Modifier.isFinal(expected) != Modifier.isFinal(actual)) {
+      msg += "It should " + (Modifier.isFinal(actual) ? "not " : "") + "be final. ";
     }
 
-    /**
-     * Gets the number of points possible. This number is only meaningful after
-     * the tests have been run.
-     * 
-     * @return Number of points possible.
-     */
-    private int getScorePossible() {
-      return nPointsPossible;
+    // For interfaces, we don't care if they are marked abstract.
+    if (Modifier.isInterface(expected) != Modifier.isInterface(actual)) {
+      msg += "It should " + (Modifier.isInterface(actual) ? "not " : "") + "be an interface. ";
+    } else if (Modifier.isAbstract(expected) != Modifier.isAbstract(actual)) {
+      msg += "It should " + (Modifier.isAbstract(actual) ? "not " : "") + "be abstract. ";
     }
 
-    @Override
-    public void testRunFinished(Result result) throws Exception {
-      super.testRunFinished(result);
+    return msg;
+  }
 
-      if (!isVerbose) {
-        System.setOut(oldOut);
+  /**
+   * Get a comma-separated sequence of stringified class literals (i.e,
+   * "String.class, boolean.class") corresponding to the given array of class
+   * objects.
+   * 
+   * @param types
+   * Ordered list of classes for which a comma-separated String is created.
+   * 
+   * @return The comma-separated list of classes.
+   */
+  public static String getTypesList(Class<?>[] types) {
+    String list = "";
+    if (types.length > 0) {
+      list += types[0].getName() + ".class";
+      for (int i = 1; i < types.length; ++i) {
+        list += ", " + types[i].getName() + ".class";
       }
+    }
+    return list;
+  }
+}
 
-      int nTests = result.getRunCount();
-      int nTestsFailed = result.getFailureCount();
-      final String wrapPattern = "(.{50,}?) ";
+class SpecCheckTestResult {
+  private Description testContext;
+  private Failure failure;
 
-      String scoreMessage = String.format("%d out of %d tests pass.", nTests - nTestsFailed, nTests);
-      if (getScorePossible() > 0) {
-        scoreMessage = String.format("You received %d/%d points. %s", getScore(), getScorePossible(), scoreMessage);
+  public SpecCheckTestResult(Description testContext) {
+    this.testContext = testContext;
+  }
+
+  public void setFailure(Failure failure) {
+    this.failure = failure;
+  }
+
+  public boolean isPassed() {
+    return failure == null;
+  }
+
+  public boolean isFailed() {
+    return !isPassed();
+  }
+
+  private SpecCheckTest getAnnotation() {
+    try {
+      Method method = SpecCheckUtilities.getMethod(testContext);
+      SpecCheckTest annotation = method.getAnnotation(SpecCheckTest.class);
+      return annotation;
+    } catch (SecurityException e) {
+      return null;
+    } catch (NoSuchMethodException e) {
+      return null;
+    } catch (ClassNotFoundException e) {
+      return null;
+    }
+  }
+
+  public int getPointCount() {
+    SpecCheckTest annotation = getAnnotation();
+    return annotation != null ? annotation.nPoints() : 0;
+  }
+
+  public boolean isSpecCheckTest() {
+    SpecCheckTest annotation = getAnnotation();
+    return annotation != null && annotation.order() <= SpecCheckTest.MAX_SPECCHECK_TESTS_ORDER;
+  }
+
+  public Description getTestContext() {
+    return testContext;
+  }
+
+  public Failure getFailure() {
+    return failure;
+  }
+}
+
+class SpecCheckTestResults {
+  private HashMap<Description, SpecCheckTestResult> descriptionToResults;
+
+  public SpecCheckTestResults() {
+    descriptionToResults = new HashMap<Description, SpecCheckTestResult>();
+  }
+
+  public void add(Description description,
+                  SpecCheckTestResult result) {
+    descriptionToResults.put(description, result);
+  }
+
+  public SpecCheckTestResult get(Description description) {
+    return descriptionToResults.get(description);
+  }
+
+  public int getSpecCheckTestsCount() {
+    int nSpecCheckTests = 0;
+    for (SpecCheckTestResult result : descriptionToResults.values()) {
+      if (result.isSpecCheckTest()) {
+        ++nSpecCheckTests;
       }
+    }
+    return nSpecCheckTests;
+  }
+
+  public int getSpecCheckTestsPassedCount() {
+    int nSpecCheckTestsPassed = 0;
+    for (SpecCheckTestResult result : descriptionToResults.values()) {
+      if (result.isSpecCheckTest() && result.isPassed()) {
+        ++nSpecCheckTestsPassed;
+      }
+    }
+    return nSpecCheckTestsPassed;
+  }
+
+  public int getPassedCount() {
+    int nPassed = 0;
+    for (SpecCheckTestResult result : descriptionToResults.values()) {
+      if (result.isPassed()) {
+        ++nPassed;
+      }
+    }
+    return nPassed;
+  }
+
+  public int getScorePossible() {
+    int scorePossible = 0;
+    for (SpecCheckTestResult result : descriptionToResults.values()) {
+      scorePossible += result.getPointCount();
+    }
+    return scorePossible;
+  }
+
+  public int getScore() {
+    int score = 0;
+    for (SpecCheckTestResult result : descriptionToResults.values()) {
+      if (result.isPassed()) {
+        score += result.getPointCount();
+      }
+    }
+    return score;
+  }
+
+  public int getFailedCount() {
+    return getTestCount() - getPassedCount();
+  }
+
+  public int getTestCount() {
+    return descriptionToResults.size();
+  }
+
+  public boolean isPerfect() {
+    return getPassedCount() == getTestCount();
+  }
+
+  public boolean hasSpecCheckTests() {
+    return getSpecCheckTestsCount() > 0;
+  }
+
+  public boolean isSpecCompliant() {
+    return getSpecCheckTestsCount() == getSpecCheckTestsPassedCount();
+  }
+
+  public void report(boolean wantsStats) {
+    final String wrapPattern = "(.{50,}?) ";
+
+    String scoreMessage = String.format("%d out of %d tests pass.", getPassedCount(), getTestCount());
+    if (getScorePossible() > 0) {
+      scoreMessage = String.format("You received %d/%d points. %s", getScore(), getScorePossible(), scoreMessage);
+    }
+    
+    if (wantsStats) {
       System.out.printf("%s%n%n", scoreMessage);
+    }
 
-      if (nTestsFailed > 0) {
-        for (Failure f : result.getFailures()) {
+    if (getFailedCount() > 0) {
+      for (Entry<Description, SpecCheckTestResult> pair : descriptionToResults.entrySet()) {
+        Failure f = pair.getValue().getFailure();
+        if (f != null) {
           System.out.println("PROBLEM: ");
           if (!f.getException().getClass().equals(AssertionError.class) &&
               !f.getException().getClass().equals(ComparisonFailure.class) &&
@@ -470,69 +441,109 @@ public class SpecChecker {
           }
           System.out.printf("%n");
         }
-
-        System.out.println("If you do not fix these problems, you are deviating from the homework specification and may lose points.".replaceAll(wrapPattern, "$1\n"));
       }
 
-      if (getScorePossible() != 0) {
+      System.out.println("If you do not fix these problems, you are deviating from the homework specification and may lose points.".replaceAll(wrapPattern, "$1\n"));
+
+      if (wantsStats && getScorePossible() != 0) {
         scoreMessage = "TOTAL: " + getScore() + "/" + getScorePossible();
       }
-
-      results = new SpecCheckTestResults(scoreMessage, nTests - nTestsFailed, nTests, nSpecCheckTests - nSpecCheckTestsFailed, nSpecCheckTests);
     }
+  }
+}
 
-    public SpecCheckTestResults getResults() {
-      return results;
-    }
+/**
+ * A custom JUnit RunListener. We offer our own so that we can optionally add
+ * points to a student's score when tests pass.
+ * 
+ * @author cjohnson
+ */
+class SpecCheckRunListener extends RunListener {
+  private SpecCheckTestResults results;
+
+  public SpecCheckRunListener() {
+    results = new SpecCheckTestResults();
+  }
+
+  public SpecCheckTestResults getResults() {
+    return results;
+  }
+
+  @Override
+  public void testRunStarted(Description description) throws Exception {
+    super.testRunStarted(description);
   }
 
   /**
-   * We want pure interface tests to run before any optional functional tests.
-   * To support this, @SpecCheckTest exposes an order parameter. Tests with a
-   * lesser order are run before tests with a greater order. This comparator can
-   * be used to order two tests. This class is unlikely to be used directly by
-   * the instructor.
+   * Triggered when a new test has been started. If tagged with
    * 
-   * @author cjohnson
+   * @SpecCheckTest, the test's points are added to the total.
    */
-  static class SpecCheckTestComparator implements Comparator<Description> {
-    /**
-     * Order two SpecCheckTests based on their order parameter.
-     * 
-     * @param a
-     * One test.
-     * @param b
-     * The other test.
-     * @return A negative value if the order of a is less than the order of b, 0
-     * if they are the same, and a positive value otherwise.
-     */
-    @Override
-    public int compare(Description a,
-                       Description b) {
-      Method m1 = null;
-      Method m2 = null;
+  @Override
+  public void testStarted(Description description) {
+    results.add(description, new SpecCheckTestResult(description));
+  }
 
-      try {
-        m1 = SpecCheckUtilities.getMethod(a);
-        m2 = SpecCheckUtilities.getMethod(b);
-      } catch (SecurityException e) {
-        e.printStackTrace();
-      } catch (NoSuchMethodException e) {
-        e.printStackTrace();
-      } catch (ClassNotFoundException e) {
-        e.printStackTrace();
-      }
+  /**
+   * Triggered when a test fails.
+   */
+  @Override
+  public void testFailure(Failure failure) {
+    results.get(failure.getDescription()).setFailure(failure);
+  }
 
-      SpecCheckTest a1 = m1.getAnnotation(SpecCheckTest.class);
-      SpecCheckTest a2 = m2.getAnnotation(SpecCheckTest.class);
+  @Override
+  public void testRunFinished(Result result) throws Exception {
+    super.testRunFinished(result);
+  }
+}
 
-      if (a1 == null || a2 == null || a1.order() == a2.order()) {
-        return 0;
-      } else if (a1.order() < a2.order()) {
-        return -1;
-      } else {
-        return 1;
-      }
+/**
+ * We want pure interface tests to run before any optional functional tests. To
+ * support this, @SpecCheckTest exposes an order parameter. Tests with a lesser
+ * order are run before tests with a greater order. This comparator can be used
+ * to order two tests. This class is unlikely to be used directly by the
+ * instructor.
+ * 
+ * @author cjohnson
+ */
+class SpecCheckTestComparator implements Comparator<Description> {
+  /**
+   * Order two SpecCheckTests based on their order parameter.
+   * 
+   * @param a
+   * One test.
+   * @param b
+   * The other test.
+   * @return A negative value if the order of a is less than the order of b, 0
+   * if they are the same, and a positive value otherwise.
+   */
+  @Override
+  public int compare(Description a,
+                     Description b) {
+    Method m1 = null;
+    Method m2 = null;
+
+    try {
+      m1 = SpecCheckUtilities.getMethod(a);
+      m2 = SpecCheckUtilities.getMethod(b);
+    } catch (SecurityException e) {
+      e.printStackTrace();
+    } catch (NoSuchMethodException e) {
+      e.printStackTrace();
+    } catch (ClassNotFoundException e) {
+      e.printStackTrace();
+    }
+
+    SpecCheckTest a1 = m1.getAnnotation(SpecCheckTest.class);
+    SpecCheckTest a2 = m2.getAnnotation(SpecCheckTest.class);
+
+    if (a1 == null || a2 == null || a1.order() == a2.order()) {
+      return 0;
+    } else if (a1.order() < a2.order()) {
+      return -1;
+    } else {
+      return 1;
     }
   }
 }

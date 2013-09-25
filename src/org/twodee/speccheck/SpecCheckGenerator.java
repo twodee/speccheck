@@ -27,7 +27,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -50,14 +49,14 @@ public class SpecCheckGenerator {
   private String tag;
   private ArrayList<String> filesToZip = new ArrayList<String>();
   private String pathToSource = null;
-  
+
   public SpecCheckGenerator() {
   }
 
   public void setPathToSource(String path) {
     pathToSource = path;
   }
-  
+
   public SpecCheckGenerator(String pathToUnitTests) throws IOException {
     String body = slurp(pathToUnitTests);
     Pattern pattern = Pattern.compile("^public class .*? \\{(.*)^\\}", Pattern.DOTALL | Pattern.MULTILINE);
@@ -87,33 +86,34 @@ public class SpecCheckGenerator {
     ByteArrayOutputStream newOut = new ByteArrayOutputStream();
     PrintStream oldOut = System.out;
     String generated = null;
+    String preTests = "";
+    String interfaceTests = "";
 
     try {
       System.setOut(new PrintStream(newOut));
-
-      if (unitTests != null) {
-        System.out.println(unitTests);
-      }
-
       SpecCheckGenerator.generateClassExistenceTest(clazzes);
+    } finally {
+      System.setOut(oldOut);
+      preTests = newOut.toString();
+    }
+
+    try {
+      System.setOut(new PrintStream(newOut));
       for (Class<?> clazz : clazzes) {
         SpecCheckGenerator.generateClassTest(clazz);
       }
     } finally {
       System.setOut(oldOut);
-      String cases = newOut.toString();
-      try {
-        generated = substitute(cases);
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
+      interfaceTests = newOut.toString();
+    }
+
+    try {
+      generated = substitute(preTests, interfaceTests);
+    } catch (IOException e) {
+      e.printStackTrace();
     }
 
     return generated;
-  }
-
-  public void generate(Class<?>... clazzes) throws ClassNotFoundException {
-    System.out.println(get(clazzes));
   }
 
   public void generateInto(String checkerQualifiedName,
@@ -130,9 +130,16 @@ public class SpecCheckGenerator {
     System.out.println(generated);
   }
 
-  private String substitute(String cases) throws IOException {
+  private String substitute(String preTests,
+                            String interfaceTests) throws IOException {
     String generated = slurp(pathToSource + "/src/org/twodee/speccheck/SpecChecker.java");
-    generated = generated.replace("// --- GENERATED TESTS GO HERE ---", cases);
+    generated = generated.replaceFirst("(?<=class SpecCheckPreTests \\{)", Matcher.quoteReplacement(preTests));
+
+    generated = generated.replaceFirst("(?<=class SpecCheckInterfaceTests \\{)", Matcher.quoteReplacement(interfaceTests));
+
+    if (unitTests != null) {
+      generated = generated.replaceFirst("(?<=class SpecCheckUnitTests \\{)", Matcher.quoteReplacement(unitTests));
+    }
 
     generated = generated.replaceFirst("tag = \"hw\"", "tag = \"" + tag + "\"");
     String filesCommaSeparated = "";
