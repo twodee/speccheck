@@ -69,6 +69,14 @@ public class SpecCheckGenerator {
   public void setTag(String tag) {
     this.tag = tag;
   }
+  
+  public void setFilesToZip(String... paths) {
+    File[] files = new File[paths.length];
+    for (int i = 0; i < paths.length; ++i) {
+      files[i] = new File(paths[i]);
+    }
+    setFilesToZip(files);
+  }
 
   public void setFilesToZip(File... files) {
     for (File f : files) {
