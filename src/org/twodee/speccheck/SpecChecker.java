@@ -46,7 +46,7 @@ public class SpecChecker {
     
     try {
       boolean isPerfect = SpecCheck.test(isGrading);
-      System.exit(isPerfect ? 0 : 2);
+      System.exit(isPerfect ? 0 : 1);
     } catch (Error e) {
       System.out.println(e);
       System.out.println("Tests couldn't be run. Did you add JUnit to your project?");
