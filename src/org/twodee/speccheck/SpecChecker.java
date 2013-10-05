@@ -42,11 +42,15 @@ public class SpecChecker {
   private static final String[] filesToZip = {};
 
   public static void main(String[] args) {
+    boolean isGrading = args.length > 0 && args[0].equals("-g");
+    
     try {
-      SpecCheck.testAsStudent();
+      boolean isPerfect = SpecCheck.test(isGrading);
+      System.exit(isPerfect ? 0 : 1);
     } catch (Error e) {
       System.out.println(e);
       System.out.println("Tests couldn't be run. Did you add JUnit to your project?");
+      System.exit(2);
     }
   }
 
@@ -78,15 +82,17 @@ public class SpecChecker {
      * @param tester
      * Class containing JUnit tests.
      */
-    public static void testAsStudent() {
+    public static boolean test(boolean isGrading) {
       try {
         SpecCheckTestResults results = runTestSuite();
-        if (results.hasSpecCheckTests() && results.isSpecCompliant() && filesToZip.length > 0) {
+        if (!isGrading && results.hasSpecCheckTests() && results.isSpecCompliant() && filesToZip.length > 0) {
           SpecCheckZipper.zip(results.isPerfect(), tag, null, filesToZip);
         }
+        return results.isPerfect();
       } catch (Error e) {
         System.out.println(e);
         System.out.println("Tests couldn't be run. Did you add JUnit to your project?");
+        return false;
       }
     }
 
