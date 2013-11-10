@@ -50,6 +50,7 @@ public class CompareFrame<E extends JComponent> extends JDialog {
     ++constraints.gridx;
     add(theirScroller, constraints);
     
+    constraints.weighty = 0.0;
     constraints.gridx = 0;
     ++constraints.gridy;
     JButton button = new JButton("Different");

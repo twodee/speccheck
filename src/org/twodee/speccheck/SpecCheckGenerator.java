@@ -77,6 +77,10 @@ public class SpecCheckGenerator {
     }
     setFilesToZip(files);
   }
+  
+  public void setDirectoryToZip(String path) {
+    filesToZip.add(path);
+  }
 
   public void setFilesToZip(File... files) {
     for (File f : files) {
@@ -359,9 +363,11 @@ public class SpecCheckGenerator {
     // Now, if there are any methods left in the list of actual methods, we fail
     // this test -- unless the leftovers are bridge methods. Bridge methods are
     // introduced for generic types. We don't want to worry about them. We also
-    // allow for main to be present.
+    // allow for main to be present. Also, if we have private inner classes, a
+    // synthetic accessor method is made for those. We allow public synthetic
+    // methods.
     System.out.println("  for (Method m : methods) {");
-    System.out.println("    if (!m.isBridge() && !Modifier.isPrivate(m.getModifiers()) && !Modifier.isProtected(m.getModifiers()) && !m.getName().equals(\"main\")) {");
+    System.out.println("    if (!m.isBridge() && !Modifier.isPrivate(m.getModifiers()) && !Modifier.isProtected(m.getModifiers()) && !m.isSynthetic() && !m.getName().equals(\"main\")) {");
     System.out.println("      Assert.fail(String.format(\"Method " + getRequestedClassName(clazz) + ".%1$s(%2$s) is not in the specification. Any methods you add should be private (or possibly protected).\", m.getName(), SpecCheckUtilities.getTypesList(m.getParameterTypes()).replaceAll(\".class\", \"\")));");
     System.out.println("    }");
     System.out.println("  }");

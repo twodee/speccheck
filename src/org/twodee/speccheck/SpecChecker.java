@@ -9,16 +9,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,9 +22,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
-import org.junit.Assert;
 import org.junit.ComparisonFailure;
-import org.junit.Test;
 import org.junit.internal.ArrayComparisonFailure;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
@@ -43,7 +37,7 @@ public class SpecChecker {
 
   public static void main(String[] args) {
     boolean isGrading = args.length > 0 && args[0].equals("-g");
-    
+
     try {
       boolean isPerfect = SpecCheck.test(isGrading);
       System.exit(isPerfect ? 0 : 1);
@@ -86,7 +80,7 @@ public class SpecChecker {
       try {
         SpecCheckTestResults results = runTestSuite();
         if (!isGrading && results.hasSpecCheckTests() && results.isSpecCompliant() && filesToZip.length > 0) {
-          SpecCheckZipper.zip(results.isPerfect(), tag, null, filesToZip);
+          SpecCheckZipper.zip(results.isPerfect(), tag, filesToZip);
         }
         return results.isPerfect();
       } catch (Error e) {
@@ -156,21 +150,21 @@ public class SpecChecker {
       return results;
     }
   }
-  
+
   @Retention(RetentionPolicy.RUNTIME)
   @interface SpecCheckTest {
     int MAX_SPECCHECK_TESTS_ORDER = 50;
 
     /**
-     * The number of points this test contributes to the student's final score if
-     * this test passes.
+     * The number of points this test contributes to the student's final score
+     * if this test passes.
      */
     int nPoints() default 0;
 
     /**
-     * An indicator of priority for this test. A lesser-numbered test runs before
-     * a greater-numbered test. Pure interface tests should be given a low number,
-     * like 0, so that they are executed first.
+     * An indicator of priority for this test. A lesser-numbered test runs
+     * before a greater-numbered test. Pure interface tests should be given a
+     * low number, like 0, so that they are executed first.
      * 
      * @return
      */
@@ -526,11 +520,11 @@ public class SpecChecker {
   }
 
   /**
-   * We want pure interface tests to run before any optional functional tests. To
-   * support this, @SpecCheckTest exposes an order parameter. Tests with a lesser
-   * order are run before tests with a greater order. This comparator can be used
-   * to order two tests. This class is unlikely to be used directly by the
-   * instructor.
+   * We want pure interface tests to run before any optional functional tests.
+   * To support this, @SpecCheckTest exposes an order parameter. Tests with a
+   * lesser order are run before tests with a greater order. This comparator can
+   * be used to order two tests. This class is unlikely to be used directly by
+   * the instructor.
    * 
    * @author cjohnson
    */
@@ -578,10 +572,9 @@ public class SpecChecker {
   static class SpecCheckZipper {
     public static void zip(boolean isPerfect,
                            String tag,
-                           File hwDirectory,
                            String... requiredFiles) {
-      ArrayList<File> filesToZip = getFilesToZip(hwDirectory, requiredFiles);
-      
+      ArrayList<File> filesToZip = getFilesToZip(requiredFiles);
+
       // Create archive.
       boolean ok = false;
       try {
@@ -605,17 +598,17 @@ public class SpecChecker {
         System.out.println("Archive not created!");
       }
     }
-    
-    private static ArrayList<File> getFilesToZip(File hwDirectory,
-                                                 String[] requiredFiles) {
+
+    private static ArrayList<File> getFilesToZip(String[] requiredFiles) {
       ArrayList<File> filesToZip = new ArrayList<File>();
 
       for (String path : requiredFiles) {
-        filesToZip.add(new File(path));
-      }
-
-      if (hwDirectory != null) {
-        addDirectory(hwDirectory, filesToZip);
+        File f = new File(path);
+        if (f.isDirectory()) {
+          addDirectory(f, filesToZip);
+        } else {
+          filesToZip.add(f);
+        }
       }
 
       return filesToZip;
@@ -626,7 +619,7 @@ public class SpecChecker {
       if (dir.exists()) {
         File[] contents = dir.listFiles();
         for (File file : contents) {
-          if (file.isDirectory()) {
+          if (file.isDirectory() && !file.getName().equals("speccheck")) {
             addDirectory(file, files);
           } else if (!files.contains(file) && !file.getName().startsWith("speccheck") && !file.getName().endsWith(".jar")) {
             files.add(file);
@@ -648,8 +641,8 @@ public class SpecChecker {
      * Paths to source files.
      * 
      * @return True if the archive was successfully created. False if the user
-     * canceled the archiving because of a missing source file or a canceled save
-     * dialog.
+     * canceled the archiving because of a missing source file or a canceled
+     * save dialog.
      * 
      * @throws IOException
      */
@@ -695,7 +688,8 @@ public class SpecChecker {
     }
 
     /**
-     * A helper method from dumping a source file out an already-opened zip file.
+     * A helper method from dumping a source file out an already-opened zip
+     * file.
      * 
      * @param source
      * Path to source file.
@@ -760,8 +754,8 @@ public class SpecChecker {
     }
 
     /**
-     * This security manager prevents students from calling System.exit() and ending
-     * tests, throws a SecurityException instead.
+     * This security manager prevents students from calling System.exit() and
+     * ending tests, throws a SecurityException instead.
      * 
      * @see "http://forums.sun.com/thread.jspa?threadID=667798"
      */
@@ -775,5 +769,3 @@ public class SpecChecker {
     };
   }
 }
-
-
