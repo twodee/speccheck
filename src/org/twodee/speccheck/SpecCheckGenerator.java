@@ -473,7 +473,7 @@ public class SpecCheckGenerator {
     }
 
     System.out.println("    } else {");
-    System.out.println("      Assert.assertTrue(\"Instance variables must be private (or possibly protected). " + getRequestedClassName(clazz) + ".\" + actual.getName() + \" is not. The only public variables should be specified constants, which must be static and final.\", Modifier.isPrivate(actual.getModifiers()) || Modifier.isProtected(actual.getModifiers()));");
+    System.out.println("      Assert.assertTrue(\"Instance variables must be private (or possibly protected). " + getRequestedClassName(clazz) + ".\" + actual.getName() + \" is not. The only public variables should be specified constants, which must be static and final.\", Modifier.isPrivate(actual.getModifiers()) || Modifier.isProtected(actual.getModifiers()) || actual.isSynthetic());");
     System.out.println("    }");
     System.out.println("  }");
   }
