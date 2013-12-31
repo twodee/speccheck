@@ -83,7 +83,7 @@ public @interface Specified {
    * package than the one the student is to use. For example, the reference
    * implementation may reside in hw3.key, whereas the student's is in hw3.
    */
-  String inPackage() default "";
+//  String inPackage() default "";
 
   // --------------------------------------------------------------------------
   // METHOD-SPECIFIC PARAMETERS

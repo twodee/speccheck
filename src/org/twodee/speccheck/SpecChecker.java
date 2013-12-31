@@ -87,7 +87,9 @@ public class SpecChecker {
     public static boolean test(boolean isGrading) {
       try {
         SpecCheckTestResults results = runTestSuite();
-        if (!isGrading && results.hasSpecCheckTests() && results.isSpecCompliant() && filesToZip.length > 0) {
+        results.report(isGrading);
+
+        if (!isGrading && (!results.hasSpecCheckTests() || results.isSpecCompliant()) && filesToZip.length > 0) {
           SpecCheckZipper.zip(results.isPerfect(), tag, filesToZip);
         }
         return results.isPerfect();
@@ -138,7 +140,6 @@ public class SpecChecker {
       Request request = Request.aClass(SpecCheckPreTests.class);
       request = request.sortWith(new SpecCheckTestComparator());
       core.run(request);
-      boolean isTotal = false;
 
       if (results.isPerfect()) {
         request = Request.aClass(SpecCheckInterfaceTests.class);
@@ -149,11 +150,8 @@ public class SpecChecker {
           request = Request.aClass(SpecCheckUnitTests.class);
           request = request.sortWith(new SpecCheckTestComparator());
           core.run(request);
-          isTotal = true;
         }
       }
-
-      results.report(isTotal);
 
       return results;
     }
@@ -296,9 +294,9 @@ public class SpecChecker {
     public static String getTypesList(Class<?>[] types) {
       String list = "";
       if (types.length > 0) {
-        list += types[0].getName() + ".class";
+        list += types[0].getCanonicalName() + ".class";
         for (int i = 1; i < types.length; ++i) {
-          list += ", " + types[i].getName() + ".class";
+          list += ", " + types[i].getCanonicalName() + ".class";
         }
       }
       return list;
@@ -442,7 +440,7 @@ public class SpecChecker {
       return getSpecCheckTestsCount() == getSpecCheckTestsPassedCount();
     }
 
-    public void report(boolean wantsStats) {
+    public void report(boolean isGrading) {
       final String wrapPattern = "(.{50,}?) ";
 
       String scoreMessage = String.format("%d out of %d tests pass.", getPassedCount(), getTestCount());
@@ -450,7 +448,7 @@ public class SpecChecker {
         scoreMessage = String.format("You received %d/%d points. %s", getScore(), getScorePossible(), scoreMessage);
       }
 
-      if (wantsStats) {
+      if (!isGrading) {
         System.out.printf("%s%n%n", scoreMessage);
       }
 
@@ -472,11 +470,20 @@ public class SpecChecker {
           }
         }
 
-        System.out.println("If you do not fix these problems, you are deviating from the homework specification and may lose points.".replaceAll(wrapPattern, "$1\n"));
+        System.out.println("If you do not fix these problems, you are deviating from the homework specification and may not receive credit for your work.".replaceAll(wrapPattern, "$1\n"));
+        System.out.println();
+      }
 
-        if (wantsStats && getScorePossible() != 0) {
-          scoreMessage = "TOTAL: " + getScore() + "/" + getScorePossible();
-        }
+      if (getScorePossible() != 0) {
+        scoreMessage = "TOTAL: " + getScore() + "/" + getScorePossible();
+      }
+
+      if (isPerfect()) {
+        System.out.println("You've passed all tests. Now commit and push before the deadline.".replaceAll(wrapPattern, "$1\n"));
+      } else if (hasSpecCheckTests() && isSpecCompliant()) {
+        System.out.printf("You've not passed all tests. However, you've passed enough tests to qualify for later-week submission. Now commit and push before the deadline.%n".replaceAll(wrapPattern, "$1\n"));
+      } else {
+        System.out.printf("You have not passed enough tests to qualify for later-week submission.%n".replaceAll(wrapPattern, "$1\n"));
       }
     }
   }
