@@ -427,7 +427,7 @@ public class SpecCheckGenerator {
     // constructors, we fail
     // this test.
     System.out.println("  for (Constructor<?> actual : ctors) {");
-    System.out.print("    if (Modifier.isPublic(actual.getModifiers())");
+    System.out.print("    if (Modifier.isPublic(actual.getModifiers()) && !actual.isSynthetic()");
 
     Specified annotation = clazz.getAnnotation(org.twodee.speccheck.Specified.class);
     if (annotation == null || annotation.allowUnspecifiedPublicDefaultCtor()) {
