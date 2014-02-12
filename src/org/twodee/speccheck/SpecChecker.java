@@ -47,12 +47,12 @@ public class SpecChecker {
     boolean isGrading = args.length > 0 && args[0].equals("-g");
 
     try {
-      boolean isPerfect = SpecCheck.test(isGrading);
-      System.exit(isPerfect ? 0 : 1);
+      int status = SpecCheck.test(isGrading);
+      System.exit(status);
     } catch (Error e) {
       System.out.println(e);
       System.out.println("Tests couldn't be run. Did you add JUnit to your project?");
-      System.exit(2);
+      System.exit(20);
     }
   }
 
@@ -84,19 +84,20 @@ public class SpecChecker {
      * @param tester
      * Class containing JUnit tests.
      */
-    public static boolean test(boolean isGrading) {
+    public static int test(boolean isGrading) {
       try {
         SpecCheckTestResults results = runTestSuite();
-        results.report(isGrading);
+        int status = results.report(isGrading);
 
         if (!isGrading && (!results.hasSpecCheckTests() || results.isSpecCompliant()) && filesToZip.length > 0) {
           SpecCheckZipper.zip(results.isPerfect(), tag, filesToZip);
         }
-        return results.isPerfect();
+
+        return status;
       } catch (Error e) {
         System.out.println(e);
         System.out.println("Tests couldn't be run. Did you add JUnit to your project?");
-        return false;
+        return 20;
       }
     }
 
@@ -436,11 +437,31 @@ public class SpecChecker {
       return getSpecCheckTestsCount() > 0;
     }
 
+    /**
+     * Gets whether or not a minimal set of interface tests have passed. The
+     * minimal set consists of tests that are marked as SpecCheckTests and
+     * compilation-error free code. Eclipse can generate bytecode for classes
+     * that don't compile. This is annoying, and throws off my grading, which
+     * does not use ecj to compile. Students see tests passing, but the grader
+     * rejects those same solutions.
+     * @return
+     */
     public boolean isSpecCompliant() {
+      if (getFailedCount() > 0) {
+        for (Entry<Description, SpecCheckTestResult> pair : descriptionToResults.entrySet()) {
+          Failure f = pair.getValue().getFailure();
+          if (f != null) {
+            Throwable throwable = f.getException();
+            if (throwable.getLocalizedMessage().contains("Unresolved compilation")) {
+              return false;
+            }
+          }
+        }
+      }
       return getSpecCheckTestsCount() == getSpecCheckTestsPassedCount();
     }
 
-    public void report(boolean isGrading) {
+    public int report(boolean isGrading) {
       final String wrapPattern = "(.{50,}?) ";
 
       String scoreMessage = String.format("%d out of %d tests pass.", getPassedCount(), getTestCount());
@@ -480,10 +501,13 @@ public class SpecChecker {
 
       if (isPerfect()) {
         System.out.println("You've passed all tests. Now commit and push before the deadline.".replaceAll(wrapPattern, "$1\n"));
+        return 0;
       } else if (hasSpecCheckTests() && isSpecCompliant()) {
         System.out.printf("You've not passed all tests. However, you've passed enough tests to qualify for later-week submission. Now commit and push before the deadline.%n".replaceAll(wrapPattern, "$1\n"));
+        return 10;
       } else {
         System.out.printf("You have not passed enough tests to qualify for later-week submission.%n".replaceAll(wrapPattern, "$1\n"));
+        return 20;
       }
     }
   }
