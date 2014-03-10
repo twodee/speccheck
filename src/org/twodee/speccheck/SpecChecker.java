@@ -452,7 +452,7 @@ public class SpecChecker {
           Failure f = pair.getValue().getFailure();
           if (f != null) {
             Throwable throwable = f.getException();
-            if (throwable.getLocalizedMessage().contains("Unresolved compilation")) {
+            if (throwable.getLocalizedMessage() != null && throwable.getLocalizedMessage().contains("Unresolved compilation")) {
               return false;
             }
           }
