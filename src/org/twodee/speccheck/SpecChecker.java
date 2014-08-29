@@ -2,11 +2,13 @@ package org.twodee.speccheck;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Constructor;
@@ -17,12 +19,14 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Scanner;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
+import java.util.function.ToLongFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -31,6 +35,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 import org.junit.Assert;
 import org.junit.ComparisonFailure;
+import org.junit.Test;
 import org.junit.internal.ArrayComparisonFailure;
 import org.junit.runner.Description;
 import org.junit.runner.JUnitCore;
@@ -44,10 +49,19 @@ public class SpecChecker {
   private static final String[] filesToZip = {};
 
   public static void main(String[] args) {
-    boolean isGrading = args.length > 0 && args[0].equals("-g");
+    boolean isGrading = false;
+    boolean hasLaterWeek = false;
+    
+    for (int i = 0; i < args.length; ++i) {
+      if (args[i].equals("-g")) {
+        isGrading = true;
+      } else if (args[i].equals("-l")) {
+        hasLaterWeek = true;
+      }
+    }
 
     try {
-      int status = SpecCheck.test(isGrading);
+      int status = SpecCheck.test(isGrading, hasLaterWeek);
       System.exit(status);
     } catch (Error e) {
       System.out.println(e);
@@ -85,9 +99,13 @@ public class SpecChecker {
      * Class containing JUnit tests.
      */
     public static int test(boolean isGrading) {
+      return test(isGrading, true);
+    }
+    
+    public static int test(boolean isGrading, boolean hasLaterWeek) {
       try {
         SpecCheckTestResults results = runTestSuite();
-        int status = results.report(isGrading);
+        int status = report(results, isGrading, hasLaterWeek);
 
         if (!isGrading && (!results.hasSpecCheckTests() || results.isSpecCompliant()) && filesToZip.length > 0) {
           SpecCheckZipper.zip(results.isPerfect(), tag, filesToZip);
@@ -95,8 +113,64 @@ public class SpecChecker {
 
         return status;
       } catch (Error e) {
+        System.out.println("Tests couldn't be run. I saw this ugly exception instead:");
+        System.out.println();
         System.out.println(e);
-        System.out.println("Tests couldn't be run. Did you add JUnit to your project?");
+        System.out.println();
+        System.out.println("Did you add JUnit to your project?");
+        return 20;
+      }
+    }
+
+    public static int report(SpecCheckTestResults results, boolean isGrading, boolean hasLaterWeek) {
+      final String wrapPattern = "(.{50,}?) ";
+
+      String scoreMessage = String.format("%d out of %d tests pass.", results.getPassedCount(), results.getTestCount());
+      if (results.getScorePossible() > 0) {
+        scoreMessage = String.format("You received %d/%d points. %s", results.getScore(), results.getScorePossible(), scoreMessage);
+      }
+
+      if (!isGrading) {
+        System.out.printf("%s%n%n", scoreMessage);
+      }
+
+      if (results.getFailedCount() > 0) {
+        for (Entry<Description, SpecCheckTestResult> pair : results.getTests()) {
+          Failure f = pair.getValue().getFailure();
+          if (f != null) {
+            System.out.println("PROBLEM: ");
+            if (!f.getException().getClass().equals(AssertionError.class) &&
+                !f.getException().getClass().equals(ComparisonFailure.class) &&
+                !f.getException().getClass().equals(ArrayComparisonFailure.class)) {
+              System.out.println("Your code threw an exception, making it impossible to test. You'll have to sleuth out what caused it. Start by finding the line in your code where it was first thrown. Look in the following listing for the first reference to your code.".replaceAll(wrapPattern, "$1\n"));
+              System.out.println(f.getException().getClass());
+              f.getException().printStackTrace(System.out);
+            } else {
+              System.out.printf("%s%n", f.getException().getLocalizedMessage().replaceAll(wrapPattern, "$1\n"));
+            }
+            System.out.printf("%n");
+          }
+        }
+
+        System.out.println("If you do not fix these problems, you are deviating from the homework specification and may not receive credit for your work.".replaceAll(wrapPattern, "$1\n"));
+        System.out.println();
+      }
+
+      if (results.getScorePossible() != 0) {
+        scoreMessage = "TOTAL: " + results.getScore() + "/" + results.getScorePossible();
+      }
+
+      if (results.isPerfect()) {
+        System.out.println("High five. You have passed all tests. Now commit and push before the deadline.".replaceAll(wrapPattern, "$1\n"));
+        return 0;
+      } else if (!hasLaterWeek) {
+        System.out.println("You've not passed all tests. But you will! Keep at it.".replaceAll(wrapPattern, "$1\n"));
+        return 20;
+      } else if (results.hasSpecCheckTests() && results.isSpecCompliant()) {
+        System.out.printf("You've not passed all tests. However, you've passed enough tests to qualify for later-week submission. Now commit and push before the deadline.%n".replaceAll(wrapPattern, "$1\n"));
+        return 10;
+      } else {
+        System.out.printf("You have not passed enough tests to qualify for later-week submission.%n".replaceAll(wrapPattern, "$1\n"));
         return 20;
       }
     }
@@ -460,55 +534,9 @@ public class SpecChecker {
       }
       return getSpecCheckTestsCount() == getSpecCheckTestsPassedCount();
     }
-
-    public int report(boolean isGrading) {
-      final String wrapPattern = "(.{50,}?) ";
-
-      String scoreMessage = String.format("%d out of %d tests pass.", getPassedCount(), getTestCount());
-      if (getScorePossible() > 0) {
-        scoreMessage = String.format("You received %d/%d points. %s", getScore(), getScorePossible(), scoreMessage);
-      }
-
-      if (!isGrading) {
-        System.out.printf("%s%n%n", scoreMessage);
-      }
-
-      if (getFailedCount() > 0) {
-        for (Entry<Description, SpecCheckTestResult> pair : descriptionToResults.entrySet()) {
-          Failure f = pair.getValue().getFailure();
-          if (f != null) {
-            System.out.println("PROBLEM: ");
-            if (!f.getException().getClass().equals(AssertionError.class) &&
-                !f.getException().getClass().equals(ComparisonFailure.class) &&
-                !f.getException().getClass().equals(ArrayComparisonFailure.class)) {
-              System.out.println("Your code threw an exception, making it impossible to test. You'll have to sleuth out what caused it. Start by finding the line in *your* code where it was first thrown. Look in the following listing for the first reference to your code.".replaceAll(wrapPattern, "$1\n"));
-              System.out.println(f.getException().getClass());
-              f.getException().printStackTrace(System.out);
-            } else {
-              System.out.printf("%s%n", f.getException().getLocalizedMessage().replaceAll(wrapPattern, "$1\n"));
-            }
-            System.out.printf("%n");
-          }
-        }
-
-        System.out.println("If you do not fix these problems, you are deviating from the homework specification and may not receive credit for your work.".replaceAll(wrapPattern, "$1\n"));
-        System.out.println();
-      }
-
-      if (getScorePossible() != 0) {
-        scoreMessage = "TOTAL: " + getScore() + "/" + getScorePossible();
-      }
-
-      if (isPerfect()) {
-        System.out.println("You've passed all tests. Now commit and push before the deadline.".replaceAll(wrapPattern, "$1\n"));
-        return 0;
-      } else if (hasSpecCheckTests() && isSpecCompliant()) {
-        System.out.printf("You've not passed all tests. However, you've passed enough tests to qualify for later-week submission. Now commit and push before the deadline.%n".replaceAll(wrapPattern, "$1\n"));
-        return 10;
-      } else {
-        System.out.printf("You have not passed enough tests to qualify for later-week submission.%n".replaceAll(wrapPattern, "$1\n"));
-        return 20;
-      }
+    
+    public Set<Entry<Description, SpecCheckTestResult>> getTests() {
+      return descriptionToResults.entrySet();
     }
   }
 
@@ -605,6 +633,42 @@ public class SpecChecker {
       } else {
         return 1;
       }
+    }
+
+    @Override
+    public Comparator<Description> reversed() {
+      return null;
+    }
+
+    @Override
+    public Comparator<Description> thenComparing(Comparator<? super Description> other) {
+      return null;
+    }
+
+    @Override
+    public <U> Comparator<Description> thenComparing(Function<? super Description, ? extends U> keyExtractor,
+                                                     Comparator<? super U> keyComparator) {
+      return null;
+    }
+
+    @Override
+    public <U extends Comparable<? super U>> Comparator<Description> thenComparing(Function<? super Description, ? extends U> keyExtractor) {
+      return null;
+    }
+
+    @Override
+    public Comparator<Description> thenComparingInt(ToIntFunction<? super Description> keyExtractor) {
+      return null;
+    }
+
+    @Override
+    public Comparator<Description> thenComparingLong(ToLongFunction<? super Description> keyExtractor) {
+      return null;
+    }
+
+    @Override
+    public Comparator<Description> thenComparingDouble(ToDoubleFunction<? super Description> keyExtractor) {
+      return null;
     }
   }
 
@@ -806,5 +870,10 @@ public class SpecChecker {
         }
       }
     };
+  }
+  
+  public static String wrap(String s, int nChars) {
+    final String wrapPattern = "(.{50,}?) ";
+    return s.replaceAll(wrapPattern, String.format("$1%n"));
   }
 }

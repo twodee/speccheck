@@ -9,7 +9,7 @@ import javax.swing.JDialog;
 import javax.swing.JOptionPane;
 
 public class DialogUtilities {
-  public static boolean isYes(String message) throws InterruptedException {
+  public static boolean isYes(String message) {
     JOptionPane p = new JOptionPane(message, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_OPTION);
     final JDialog d = p.createDialog("Manual Check");
     d.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
@@ -52,7 +52,13 @@ public class DialogUtilities {
     };
 
     t.start();
-    t.join();
+    while (t != null) {
+      try {
+        t.join();
+        t = null;
+      } catch (InterruptedException e) {
+      }
+    }
 
     return p.getValue().equals(new Integer(JOptionPane.YES_OPTION));
   }
