@@ -17,6 +17,7 @@ public class CompareFrame<E extends JComponent> extends JDialog {
   private JScrollPane ourScroller;
   private JScrollPane theirScroller;
   private boolean isSame;
+  private JButton sameButton;
 
   public CompareFrame() {
     setLayout(new GridBagLayout());
@@ -69,19 +70,22 @@ public class CompareFrame<E extends JComponent> extends JDialog {
     add(button, constraints);
     
     constraints.gridx = 1;
-    button = new JButton("Same");
-    button.addActionListener(new PassFailListener(true));
-    add(button, constraints);
+    sameButton = new JButton("Same");
+    sameButton.addActionListener(new PassFailListener(true));
+    add(sameButton, constraints);
 
     setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
   }
 
-  public CompareFrame compare(String msg, E ours, E theirs) {
+  public CompareFrame<E> compare(String msg, E ours, E theirs) {
     label.setText(msg);
     ourScroller.setViewportView(ours);
     theirScroller.setViewportView(theirs);
     pack();
+    
+    sameButton.requestFocusInWindow();
     setVisible(true);
+
     return this;
   }
   
