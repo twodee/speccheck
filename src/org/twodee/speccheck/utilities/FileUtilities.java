@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -59,6 +60,16 @@ public class FileUtilities {
    */
   public static String getFileText(String path) throws IOException {
     return getFileText(new File(path));
+  }
+  
+  public static List<String> getFileLines(File file) throws IOException {
+    ArrayList<String> lines = new ArrayList<String>();
+    Scanner in = new Scanner(file);
+    while (in.hasNextLine()) {
+      lines.add(in.nextLine());
+    }
+    in.close();
+    return lines;
   }
 
   /**
