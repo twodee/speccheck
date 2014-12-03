@@ -1,4 +1,4 @@
-package org.twodee.speccheck.utilities;
+package org.twodee.speccheck;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;

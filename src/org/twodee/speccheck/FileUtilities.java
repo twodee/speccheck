@@ -1,6 +1,7 @@
-package org.twodee.speccheck.utilities;
+package org.twodee.speccheck;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -58,8 +59,8 @@ public class FileUtilities {
    * @throws IOException
    * If file cannot be read.
    */
-  public static String getFileText(String path) throws IOException {
-    return getFileText(new File(path));
+  public static String slurp(String path) throws IOException {
+    return slurp(new File(path));
   }
   
   public static List<String> getFileLines(File file) throws IOException {
@@ -83,13 +84,21 @@ public class FileUtilities {
    * @throws IOException
    * If file cannot be read.
    */
-  public static String getFileText(File file) throws IOException {
-    Scanner in = new Scanner(file);
-    in.useDelimiter("\\Z");
-    String contents = in.next();
+  public static String slurp(File file) throws IOException {
+    FileInputStream in = new FileInputStream(file);
+    StringBuilder sb = new StringBuilder();
+    byte[] buffer = new byte[1024];
+    int nRead = 0;
+
+    while ((nRead = in.read(buffer)) >= 0) {
+      sb.append(new String(buffer, 0, nRead));
+    }
+
     in.close();
-    return contents;
+    return sb.toString();
   }
+  
+  
 
   public static ArrayList<String> getZipEntries(ZipInputStream zis) throws IOException {
     ArrayList<String> entries = new ArrayList<String>();

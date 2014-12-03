@@ -20,7 +20,7 @@ package org.twodee.speccheck;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.reflect.Constructor;
@@ -28,6 +28,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -60,7 +61,7 @@ public class SpecCheckGenerator {
   }
 
   public SpecCheckGenerator(String pathToUnitTests) throws IOException {
-    String body = slurp(pathToUnitTests);
+    String body = FileUtilities.slurp(pathToUnitTests);
     Pattern pattern = Pattern.compile("^public class .*? \\{(.*)^\\}", Pattern.DOTALL | Pattern.MULTILINE);
     Matcher matcher = pattern.matcher(body);
     if (matcher.find()) {
@@ -146,37 +147,59 @@ public class SpecCheckGenerator {
 
   private String substitute(String preTests,
                             String interfaceTests) throws IOException {
-    String generated = slurp(pathToSource + "/src/org/twodee/speccheck/SpecChecker.java");
-    generated = generated.replaceFirst("(?<=class SpecCheckPreTests \\{)", Matcher.quoteReplacement(preTests));
+    // Collect up all the source files.
+    File packageDirectory = new File(pathToSource, "/src/org/twodee/speccheck");
+    File[] sources = packageDirectory.listFiles(new FilenameFilter() {
+      @Override
+      public boolean accept(File dir,
+                            String name) {
+        return name.endsWith(".java");
+      }
+    });
 
-    generated = generated.replaceFirst("(?<=class SpecCheckInterfaceTests \\{)", Matcher.quoteReplacement(interfaceTests));
-
-    if (unitTests != null) {
-      generated = generated.replaceFirst("(?<=class SpecCheckUnitTests \\{)", Matcher.quoteReplacement(unitTests));
+    // Read them in.
+    HashMap<String, String> namesToSources = new HashMap<String, String>();
+    for (File source : sources) {
+      namesToSources.put(source.getName(), FileUtilities.slurp(source));
     }
 
-    generated = generated.replaceFirst("tag = \"hw\"", "tag = \"" + tag + "\"");
+    // We'll inline them all into the SpecChecker class, let's remove that from
+    // the collection, since it'll be treated specially.
+    String omniSource = namesToSources.remove("SpecChecker.java");
+
+    // Now we flesh out the test suite to include the generated tests and the
+    // caller's unit tests.
+    String suiteSource = namesToSources.get("SpecCheckTestSuite.java");
+    suiteSource = suiteSource.replaceFirst("(?<=class SpecCheckPreTests \\{)", Matcher.quoteReplacement(preTests));
+    suiteSource = suiteSource.replaceFirst("(?<=class SpecCheckInterfaceTests \\{)", Matcher.quoteReplacement(interfaceTests));
+    if (unitTests != null) {
+      suiteSource = suiteSource.replaceFirst("(?<=class SpecCheckUnitTests \\{)", Matcher.quoteReplacement(unitTests));
+    }
+    namesToSources.put("SpecCheckTestSuite.java", suiteSource);
+    
+    // Append all the helpers to omni, stripping out the public.
+    Pattern lastCurlyPattern = Pattern.compile("(?=}[^}]*\\Z)", Pattern.DOTALL);
+
+    Pattern packagePattern = Pattern.compile("^package.*$\\r?\\n", Pattern.MULTILINE);
+    Pattern importPattern = Pattern.compile("^import.*$\\r?\\n", Pattern.MULTILINE);
+    Pattern publicPattern = Pattern.compile("^public \\s*", Pattern.MULTILINE);
+
+    for (String source : namesToSources.values()) {
+      source = packagePattern.matcher(source).replaceFirst("");
+      source = importPattern.matcher(source).replaceAll("");
+      source = publicPattern.matcher(source).replaceFirst("public static ");
+      omniSource = lastCurlyPattern.matcher(omniSource).replaceFirst(Matcher.quoteReplacement(source));
+    }
+
+    // Update some variables referenced by the SpecChecker.
+    omniSource = omniSource.replaceFirst("tag = \"hw\"", "tag = \"" + tag + "\"");
     String filesCommaSeparated = "";
     for (String path : filesToZip) {
       filesCommaSeparated += "\"" + path + "\", ";
     }
-    generated = generated.replaceFirst("filesToZip = \\{\\}", "filesToZip = {" + filesCommaSeparated + "}");
+    omniSource = omniSource.replaceFirst("filesToZip = \\{\\}", "filesToZip = {" + filesCommaSeparated + "}");
 
-    return generated;
-  }
-
-  private static String slurp(String path) throws IOException {
-    FileInputStream in = new FileInputStream(path);
-    StringBuilder sb = new StringBuilder();
-    byte[] buffer = new byte[1024];
-    int nRead = 0;
-
-    while ((nRead = in.read(buffer)) >= 0) {
-      sb.append(new String(buffer, 0, nRead));
-    }
-
-    in.close();
-    return sb.toString();
+    return omniSource;
   }
 
   static void generateClassExistenceTest(Class<?>... clazzes) {
@@ -212,7 +235,7 @@ public class SpecCheckGenerator {
     generateClassSuperTest(clazz);
     generateClassInterfacesTest(clazz);
 
-    Specified annotation = clazz.getAnnotation(org.twodee.speccheck.Specified.class);
+    Specified annotation = clazz.getAnnotation(Specified.class);
 
     Field[] fields = clazz.getDeclaredFields();
     generateSpecifiedFieldsTests(clazz, fields);
@@ -314,7 +337,7 @@ public class SpecCheckGenerator {
   }
 
   private static void generateClassSuperTest(Class<?> clazz) throws ClassNotFoundException {
-    Specified annotation = clazz.getAnnotation(org.twodee.speccheck.Specified.class);
+    Specified annotation = clazz.getAnnotation(Specified.class);
     if (annotation != null && annotation.checkSuper()) {
       System.out.printf("  try {%n" +
                         "     Class<?> cls = Class.forName(\"%1$s\");%n" +
@@ -328,7 +351,7 @@ public class SpecCheckGenerator {
   }
 
   private static void generateClassInterfacesTest(Class<?> clazz) throws ClassNotFoundException {
-    Specified annotation = clazz.getAnnotation(org.twodee.speccheck.Specified.class);
+    Specified annotation = clazz.getAnnotation(Specified.class);
     if (annotation != null) {
       Class<?>[] ifaces = annotation.mustImplement();
       System.out.printf("  Class<?> cls = Class.forName(\"%1$s\");%n" +
@@ -429,7 +452,7 @@ public class SpecCheckGenerator {
     System.out.println("  for (Constructor<?> actual : ctors) {");
     System.out.print("    if (Modifier.isPublic(actual.getModifiers()) && !actual.isSynthetic()");
 
-    Specified annotation = clazz.getAnnotation(org.twodee.speccheck.Specified.class);
+    Specified annotation = clazz.getAnnotation(Specified.class);
     if (annotation == null || annotation.allowUnspecifiedPublicDefaultCtor()) {
       System.out.print(" && actual.getParameterTypes().length != 0");
     }
@@ -482,7 +505,7 @@ public class SpecCheckGenerator {
     System.out.println("    if (!actual.isEnumConstant()) {");
     System.out.println("      if (Modifier.isStatic(actual.getModifiers())) {");
 
-    Specified annotation = clazz.getAnnotation(org.twodee.speccheck.Specified.class);
+    Specified annotation = clazz.getAnnotation(Specified.class);
     if (annotation == null || !annotation.allowUnspecifiedPublicConstants()) {
       System.out.println("        Assert.assertTrue(String.format(\"Field " + clazz.getCanonicalName() + ".%1$s is not in the specification. Any static fields you add should be private.\", actual.getName()), Modifier.isPrivate(actual.getModifiers()) || Modifier.isProtected(actual.getModifiers()));");
     }

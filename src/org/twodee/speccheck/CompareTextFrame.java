@@ -1,4 +1,4 @@
-package org.twodee.speccheck.utilities;
+package org.twodee.speccheck;
 
 import java.awt.Font;
 import java.io.File;
@@ -32,8 +32,8 @@ public class CompareTextFrame extends CompareFrame<JTextArea> {
                                   File ours,
                                   File theirs) throws IOException {
     return compare(msg,
-                   FileUtilities.getFileText(ours),
-                   FileUtilities.getFileText(theirs));
+                   FileUtilities.slurp(ours),
+                   FileUtilities.slurp(theirs));
   }
 
   public CompareTextFrame compare(String msg,

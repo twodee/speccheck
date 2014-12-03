@@ -78,13 +78,6 @@ public @interface Specified {
    */
   Class<?>[] mustImplement() default {};
 
-  /**
-   * Allows the annotated reference implementation to be placed in a different
-   * package than the one the student is to use. For example, the reference
-   * implementation may reside in hw3.key, whereas the student's is in hw3.
-   */
-//  String inPackage() default "";
-
   // --------------------------------------------------------------------------
   // METHOD-SPECIFIC PARAMETERS
   // These parameters only apply to methods. On classes and fields, they are
