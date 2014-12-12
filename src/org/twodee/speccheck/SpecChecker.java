@@ -132,7 +132,7 @@ public class SpecChecker {
   public static int report(SpecCheckTestResults results,
                            boolean isGrading,
                            boolean hasLaterWeek) {
-    String scoreMessage = String.format("%d out of %d tests pass.", results.getPassedCount(), results.getTestCount());
+    String scoreMessage = String.format("%d out of %d tests pass.", results.getPassedCount(), getTestsCount(isGrading));
     if (results.getScorePossible() > 0) {
       scoreMessage = String.format("You received %d/%d points. %s", results.getScore(), results.getScorePossible(), scoreMessage);
     }
@@ -219,43 +219,61 @@ public class SpecChecker {
     JUnitCore core = new JUnitCore();
     core.addListener(listener);
 
-    Request request = Request.aClass(SpecCheckTestSuite.SpecCheckPreTests.class);
-    request = request.sortWith(new SpecCheckTestComparator());
-    core.run(request);
-
+    core.run(getViableTests(SpecCheckTestSuite.SpecCheckPreTests.class, isGrading));
     if (results.isPerfect()) {
-      request = Request.aClass(SpecCheckTestSuite.SpecCheckInterfaceTests.class);
-      request = request.sortWith(new SpecCheckTestComparator());
-      core.run(request);
-
+      core.run(getViableTests(SpecCheckTestSuite.SpecCheckInterfaceTests.class, isGrading));
       if (results.isPerfect()) {
-        request = Request.aClass(SpecCheckTestSuite.SpecCheckUnitTests.class);
-        if (isGrading) {
-          request = request.filterWith(new Filter() {
-            @Override
-            public boolean shouldRun(Description description) {
-              try {
-                Method testMethod = SpecCheckUtilities.getMethod(description);
-                SpecCheckTest anno = testMethod.getAnnotation(SpecCheckTest.class);
-                return anno == null || anno.runWhenGrading();
-              } catch (Exception e) {
-                e.printStackTrace();
-              }
-              return true;
-            }
-
-            @Override
-            public String describe() {
-              return null;
-            }
-          });
-        }
-        request = request.sortWith(new SpecCheckTestComparator());
-        core.run(request);
+        core.run(getViableTests(SpecCheckTestSuite.SpecCheckUnitTests.class, isGrading));
       }
     }
 
     return results;
+  }
+  
+  private static Request getViableTests(Class<?> clazz, final boolean isGrading) {
+    Request request = Request.aClass(clazz);
+    if (isGrading) {
+      request = request.filterWith(new Filter() {
+        @Override
+        public boolean shouldRun(Description description) {
+          try {
+            Method testMethod = SpecCheckUtilities.getMethod(description);
+            SpecCheckTest anno = testMethod.getAnnotation(SpecCheckTest.class);
+            return anno == null || !isGrading || anno.runWhenGrading();
+          } catch (Exception e) {
+            e.printStackTrace();
+          }
+          return true;
+        }
+
+        @Override
+        public String describe() {
+          return null;
+        }
+      });
+    }
+    return request.sortWith(new SpecCheckTestComparator());
+  }
+  
+  private static int getTestsCount(boolean isGrading) {
+    return getTestsCount(SpecCheckTestSuite.SpecCheckPreTests.class, isGrading) +
+           getTestsCount(SpecCheckTestSuite.SpecCheckInterfaceTests.class, isGrading) +
+           getTestsCount(SpecCheckTestSuite.SpecCheckUnitTests.class, isGrading);
+  }
+  
+  private static int getTestsCount(Class<?> clazz, boolean isGrading) {
+    Method[] methods = clazz.getMethods();
+    int nTests = 0;
+    for (Method method : methods) {
+      Test testAnnotation = method.getAnnotation(Test.class);
+      if (testAnnotation != null) {
+        SpecCheckTest specCheckTestAnnotation = method.getAnnotation(SpecCheckTest.class);
+        if (specCheckTestAnnotation == null || !isGrading || specCheckTestAnnotation.runWhenGrading()) {
+          ++nTests;
+        }
+      }
+    }
+    return nTests;
   }
 
   /**

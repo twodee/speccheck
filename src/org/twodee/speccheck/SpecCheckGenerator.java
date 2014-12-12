@@ -162,6 +162,10 @@ public class SpecCheckGenerator {
     for (File source : sources) {
       namesToSources.put(source.getName(), FileUtilities.slurp(source));
     }
+    
+    // These two are only needed for generating.
+    namesToSources.remove("SpecCheckGenerator.java");
+    namesToSources.remove("Specified.java");
 
     // We'll inline them all into the SpecChecker class, let's remove that from
     // the collection, since it'll be treated specially.
