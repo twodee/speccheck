@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
@@ -85,20 +86,21 @@ public class FileUtilities {
    * If file cannot be read.
    */
   public static String slurp(File file) throws IOException {
-    FileInputStream in = new FileInputStream(file);
+    return slurp(new FileInputStream(file));
+  }
+  
+  public static String slurp(InputStream is) throws IOException {
     StringBuilder sb = new StringBuilder();
     byte[] buffer = new byte[1024];
     int nRead = 0;
 
-    while ((nRead = in.read(buffer)) >= 0) {
+    while ((nRead = is.read(buffer)) >= 0) {
       sb.append(new String(buffer, 0, nRead));
     }
 
-    in.close();
+    is.close();
     return sb.toString();
   }
-  
-  
 
   public static ArrayList<String> getZipEntries(ZipInputStream zis) throws IOException {
     ArrayList<String> entries = new ArrayList<String>();
