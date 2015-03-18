@@ -165,7 +165,7 @@ public class SpecCheckGenerator {
     
     // These two are only needed for generating.
     namesToSources.remove("SpecCheckGenerator.java");
-    namesToSources.remove("Specified.java");
+    /* namesToSources.remove("Specified.java"); */
 
     // We'll inline them all into the SpecChecker class, let's remove that from
     // the collection, since it'll be treated specially.
