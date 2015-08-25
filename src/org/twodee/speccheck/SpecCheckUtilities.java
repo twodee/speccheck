@@ -130,7 +130,9 @@ public class SpecCheckUtilities {
         list += ", " + types[i].getCanonicalName() + ".class";
       }
     }
-    return list;
+    
+    // Strip off java.lang prefix.
+    return list.replaceAll("(?<!\\.)java\\.lang\\.", "");
   }
   
   public static boolean hasOccludingSpecCheckers(String current) {

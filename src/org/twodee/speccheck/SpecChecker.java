@@ -73,7 +73,7 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 
 public class SpecChecker {
-  private static final int WRAP_COLUMNS = 50;
+  private static final int WRAP_COLUMNS = 65;
   private static final String tag = "hw";
   private static final String[] filesToZip = {};
 

@@ -392,7 +392,7 @@ public class SpecCheckGenerator {
     for (Method m : methods) {
       if (m.isAnnotationPresent(Specified.class) || clazz.isEnum()) {
         Class<?>[] types = m.getParameterTypes();
-        String list = getTypesList(types);
+        String list = SpecCheckUtilities.getTypesList(types);
         System.out.println("  try {");
         System.out.printf("    method = Class.forName(\"%1$s\").getDeclaredMethod(\"%2$s\", new Class<?>[]{%3$s});%n",
                           clazz.getName(), m.getName(), list);
@@ -442,7 +442,7 @@ public class SpecCheckGenerator {
     for (Constructor<?> ctor : ctors) {
       if (ctor.isAnnotationPresent(Specified.class)) {
         Class<?>[] types = ctor.getParameterTypes();
-        String list = getTypesList(types);
+        String list = SpecCheckUtilities.getTypesList(types);
         System.out.println("  try {");
         System.out.printf("    ctor = Class.forName(\"%1$s\").getDeclaredConstructor(new Class<?>[]{%2$s});%n", clazz.getName(), list);
         System.out.println("    ctors.remove(ctor);");
@@ -540,7 +540,7 @@ public class SpecCheckGenerator {
     for (Method m : methods) {
       if (m.isAnnotationPresent(Specified.class)) {
         Class<?>[] types = m.getParameterTypes();
-        String list = getTypesList(types);
+        String list = SpecCheckUtilities.getTypesList(types);
         String readableList = list.replaceAll(".class", "");
 
         // Look for expected method in actual class. If we fail, then the method
@@ -599,7 +599,7 @@ public class SpecCheckGenerator {
     for (Constructor<?> ctor : ctors) {
       if (ctor.isAnnotationPresent(Specified.class)) {
         Class<?>[] types = ctor.getParameterTypes();
-        String list = getTypesList(types);
+        String list = SpecCheckUtilities.getTypesList(types);
         String readableList = list.replaceAll(".class", "");
 
         // Look for expected method in actual class. If we fail, then the method
@@ -707,14 +707,14 @@ public class SpecCheckGenerator {
    * 
    * @return The comma-separated list of classes.
    */
-  public static String getTypesList(Class<?>[] types) {
-    String list = "";
-    if (types.length > 0) {
-      list += types[0].getCanonicalName() + ".class";
-      for (int i = 1; i < types.length; ++i) {
-        list += ", " + types[i].getCanonicalName() + ".class";
-      }
-    }
-    return list;
-  }
+//  public static String getTypesList(Class<?>[] types) {
+//    String list = "";
+//    if (types.length > 0) {
+//      list += types[0].getCanonicalName() + ".class";
+//      for (int i = 1; i < types.length; ++i) {
+//        list += ", " + types[i].getCanonicalName() + ".class";
+//      }
+//    }
+//    return list;
+//  }
 }
