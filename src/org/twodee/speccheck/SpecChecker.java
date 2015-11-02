@@ -76,9 +76,9 @@ public class SpecChecker {
   private static final int WRAP_COLUMNS = 65;
   private static final String tag = "hw";
   private static final String[] filesToZip = {};
+  public static boolean isGrading = false;
 
   public static void run(String[] args) {
-    boolean isGrading = false;
     boolean hasLaterWeek = false;
 
     for (int i = 0; i < args.length; ++i) {
