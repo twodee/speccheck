@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,6 +101,23 @@ public class FileUtilities {
 
     is.close();
     return sb.toString();
+  }
+  
+  public static File resourceToTemporaryFile(Class<?> clazz, String path, String prefix, String suffix) throws IOException {
+    File tmp = File.createTempFile(prefix, suffix);
+    tmp.deleteOnExit();
+    
+    InputStream is = clazz.getResourceAsStream(path);
+    PrintWriter out = new PrintWriter(tmp);
+    Scanner in = new Scanner(is);
+    while (in.hasNextLine()) {
+      String line = in.nextLine();
+      out.println(line);
+    }
+    in.close();
+    out.close();
+    
+    return tmp;
   }
 
   public static ArrayList<String> getZipEntries(ZipInputStream zis) throws IOException {

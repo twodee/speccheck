@@ -10,6 +10,10 @@ public class CompareTextFrame extends CompareFrame<JTextArea> {
 
   private static final int NROWS = 30;
   private static final int NCOLS = 20;
+  
+  public CompareTextFrame(boolean isManual) {
+    super(isManual);
+  }
 
   public CompareTextFrame compare(String msg,
                                   String ours,
