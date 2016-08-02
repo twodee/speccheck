@@ -1,7 +1,11 @@
 package org.twodee.speccheck;
 
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import javax.swing.JButton;
@@ -9,11 +13,15 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTextArea;
+import javax.swing.border.TitledBorder;
 
 public class CompareFrame<E extends JComponent> extends JDialog {
 
-  private JLabel label;
+  private JTextArea label;
   private JScrollPane ourScroller;
   private JScrollPane theirScroller;
   private boolean isSame;
@@ -31,29 +39,43 @@ public class CompareFrame<E extends JComponent> extends JDialog {
 
     constraints.gridx = 0;
     constraints.gridy = 0;
+    constraints.fill = GridBagConstraints.BOTH;
     constraints.gridwidth = GridBagConstraints.REMAINDER;
-    label = new JLabel();
+    constraints.insets = new Insets(10, 10, 10, 10);
+
+    label = new JTextArea();
+    label.setWrapStyleWord(true);
+    label.setLineWrap(true);
+    label.setEditable(false);
+    label.setBackground(new Color(255, 255, 255, 0));
+
     add(label, constraints);
+
+    constraints.insets = new Insets(0, 0, 0, 0);
 
     constraints.gridwidth = 1;
     ++constraints.gridy;
     constraints.weightx = 1.0;
-    add(new JLabel("Expected"), constraints);
+    constraints.fill = GridBagConstraints.NONE;
+    constraints.anchor = GridBagConstraints.CENTER;
+    JLabel expectedLabel = new JLabel("Expected");
+    add(expectedLabel, constraints);
     ++constraints.gridx;
     add(new JLabel("Actual"), constraints);
 
     constraints.gridx = 0;
+    constraints.gridwidth = 2;
     ++constraints.gridy;
     constraints.fill = GridBagConstraints.BOTH;
     constraints.weightx = 1.0;
     constraints.weighty = 1.0;
 
     ourScroller = new JScrollPane();
-    add(ourScroller, constraints);
-
     theirScroller = new JScrollPane();
-    ++constraints.gridx;
-    add(theirScroller, constraints);
+
+    JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, ourScroller, theirScroller);
+    splitPane.setResizeWeight(0.5);
+    add(splitPane, constraints);
 
     ++constraints.gridy;
     if (isManual) {
@@ -96,6 +118,7 @@ public class CompareFrame<E extends JComponent> extends JDialog {
       add(sameButton, constraints);
     }
 
+    setMinimumSize(new Dimension(500, 0));
     setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
   }
 
