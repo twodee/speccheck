@@ -18,6 +18,8 @@
 
 package org.twodee.speccheck;
 
+import java.util.Set;
+import java.util.TreeSet;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -52,6 +54,7 @@ public class SpecCheckGenerator {
   private String tag;
   private ArrayList<String> filesToZip = new ArrayList<String>();
   private String pathToSource = null;
+  private Set<String> importLines = new TreeSet<String>();
 
   public SpecCheckGenerator() {
   }
@@ -66,6 +69,13 @@ public class SpecCheckGenerator {
     Matcher matcher = pattern.matcher(body);
     if (matcher.find()) {
       unitTests = matcher.group(1);
+    }
+
+    // Cull imports from unit tests.
+    Pattern importPattern = Pattern.compile("^import.*$\\r?\\n", Pattern.MULTILINE);
+    Matcher importMatcher = importPattern.matcher(body);
+    while (importMatcher.find()) {
+      importLines.add(importMatcher.group());
     }
   }
 
@@ -133,6 +143,7 @@ public class SpecCheckGenerator {
 
   public void generateInto(String checkerQualifiedName,
                            Class<?>... clazzes) throws ClassNotFoundException {
+
     String generated = get(clazzes);
     int iLastDot = checkerQualifiedName.lastIndexOf('.');
     String checkerPackageLine = "";
@@ -141,7 +152,16 @@ public class SpecCheckGenerator {
     }
     String checkerClass = checkerQualifiedName.substring(iLastDot + 1);
     generated = generated.replaceFirst("public class SpecChecker", "public class " + checkerClass);
-    generated = generated.replaceFirst("package org.twodee.speccheck;", checkerPackageLine);
+
+    StringBuffer buffer = new StringBuffer();
+    buffer.append(checkerPackageLine);
+    buffer.append(System.lineSeparator());
+
+    for (String importLine : importLines) {
+      buffer.append(importLine);
+    }
+
+    generated = generated.replaceFirst("package org.twodee.speccheck;", buffer.toString());
     System.out.println(generated);
   }
 
@@ -187,9 +207,20 @@ public class SpecCheckGenerator {
     Pattern packagePattern = Pattern.compile("^package.*$\\r?\\n", Pattern.MULTILINE);
     Pattern importPattern = Pattern.compile("^import.*$\\r?\\n", Pattern.MULTILINE);
     Pattern publicPattern = Pattern.compile("^public \\s*", Pattern.MULTILINE);
+ 
+    // Cull imports from overall.
+    Matcher importMatcher = importPattern.matcher(omniSource);
+    while (importMatcher.find()) {
+      importLines.add(importMatcher.group());
+    }
+    omniSource = importPattern.matcher(omniSource).replaceAll("");
 
     for (String source : namesToSources.values()) {
       source = packagePattern.matcher(source).replaceFirst("");
+      importMatcher = importPattern.matcher(source);
+      while (importMatcher.find()) {
+        importLines.add(importMatcher.group());
+      }
       source = importPattern.matcher(source).replaceAll("");
       source = publicPattern.matcher(source).replaceFirst("public static ");
       omniSource = lastCurlyPattern.matcher(omniSource).replaceFirst(Matcher.quoteReplacement(source));
