@@ -19,8 +19,7 @@ public class StringUtilities {
   
   public static String wrap(String s,
                             int nChars) {
-//    final String wrapPattern = "(.{" + nChars + ",}?) ";
-    final String wrapPattern = "(.{1," + nChars + "})( +|\n|\\Z)";
+    final String wrapPattern = "(.{1," + nChars + "})( +|\n)";
     return s.replaceAll(wrapPattern, String.format("$1%n"));
   }
 }
