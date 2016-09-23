@@ -90,10 +90,9 @@ public class SpecChecker {
     }
 
     try {
-      Class<?> specChecker = Class.forName(tag + ".speccheck.SpecCheckTestSuite.SpecCheckUnitTests");
+      Class<?> specChecker = SpecCheckTestSuite.SpecCheckUnitTests.class;
       Field isGradingField = specChecker.getField("isGrading");
       isGradingField.setBoolean(null, isGrading);
-    } catch (ClassNotFoundException e) {
     } catch (NoSuchFieldException e) {
     } catch (IllegalAccessException e) {
     }
