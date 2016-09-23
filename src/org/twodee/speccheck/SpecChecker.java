@@ -179,10 +179,10 @@ public class SpecChecker {
     }
 
     if (results.isPerfect()) {
-      System.out.println(StringUtilities.wrap("High five. You have passed all tests. Now commit and push before the deadline.", WRAP_COLUMNS));
+      System.out.print(StringUtilities.wrap("High five. You have passed all tests. Now commit and push before the deadline.", WRAP_COLUMNS));
       return 0;
     } else if (!hasLaterWeek) {
-      System.out.println(StringUtilities.wrap("You've not passed all tests. But you will! Keep at it.", WRAP_COLUMNS));
+      System.out.print(StringUtilities.wrap("You've not passed all tests. But you will! Keep at it.", WRAP_COLUMNS));
       return 20;
     } else if (results.hasSpecCheckTests() && results.isSpecCompliant()) {
       System.out.printf(StringUtilities.wrap("You've not passed all tests. However, you've passed enough tests to qualify for later-week submission. Now commit and push before the deadline.%n", WRAP_COLUMNS));
