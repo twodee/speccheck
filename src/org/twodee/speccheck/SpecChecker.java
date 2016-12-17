@@ -73,7 +73,7 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 
 public class SpecChecker {
-  private static final int WRAP_COLUMNS = 65;
+  private static final int WRAP_COLUMNS = 80;
   private static final String tag = "hw";
   private static final String[] filesToZip = {};
   public static boolean isGrading = false;
@@ -179,7 +179,7 @@ public class SpecChecker {
     }
 
     if (results.isPerfect()) {
-      System.out.print(StringUtilities.wrap("High five. You have passed all tests. Now commit and push before the deadline.", WRAP_COLUMNS));
+      System.out.print(StringUtilities.wrap("High five. You have passed all tests.", WRAP_COLUMNS));
       return 0;
     } else if (!hasLaterWeek) {
       System.out.print(StringUtilities.wrap("You've not passed all tests. But you will! Keep at it.", WRAP_COLUMNS));
@@ -235,6 +235,9 @@ public class SpecChecker {
       core.run(getViableTests(SpecCheckTestSuite.SpecCheckInterfaceTests.class, isGrading));
       if (results.isPerfect()) {
         core.run(getViableTests(SpecCheckTestSuite.SpecCheckUnitTests.class, isGrading));
+        if (results.isPerfect() && !isGrading) {
+          core.run(getViableTests(SpecCheckTestSuite.SpecCheckPostTests.class, isGrading));
+        }
       }
     }
 
@@ -269,7 +272,8 @@ public class SpecChecker {
   private static int getTestsCount(boolean isGrading) {
     return getTestsCount(SpecCheckTestSuite.SpecCheckPreTests.class, isGrading) +
            getTestsCount(SpecCheckTestSuite.SpecCheckInterfaceTests.class, isGrading) +
-           getTestsCount(SpecCheckTestSuite.SpecCheckUnitTests.class, isGrading);
+           getTestsCount(SpecCheckTestSuite.SpecCheckUnitTests.class, isGrading) +
+           getTestsCount(SpecCheckTestSuite.SpecCheckPostTests.class, isGrading);
   }
   
   private static int getTestsCount(Class<?> clazz, boolean isGrading) {

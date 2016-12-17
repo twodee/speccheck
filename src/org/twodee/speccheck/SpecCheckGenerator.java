@@ -305,10 +305,31 @@ public class SpecCheckGenerator {
       }
     }
 
+    // Issue some tests on the source code.
+    generateSourceTests(clazz);
+
     System.out.println("}");
 
     // Issue an independent test for catching variable-hungry developers.
     generateFieldCountTest(clazz);
+  }
+
+  private static void generateSourceTests(Class<?> clazz) {
+    String path = "src/" + clazz.getName().replace('.', '/') + ".java";
+    System.out.println("  // Check sourcies");
+    System.out.println("  String srcPath = \"" + path + "\";");
+    System.out.println("  String src = FileUtilities.slurp(srcPath);");
+    System.out.println("  Pattern pattern = Pattern.compile(\"^\\\\s*import\\\\s+(?!org\\\\.twodee\\\\.)(?!java\\\\.)(?!javax\\\\.)(.*?)\\\\s*;\", Pattern.MULTILINE);");
+    System.out.println("  Matcher matcher = pattern.matcher(src);");
+    System.out.println("  if (matcher.find()) {");
+    System.out.println("    Assert.fail(String.format(\"Class " + clazz.getName() + " imports %s. You may only import classes from standard packages (those whose fully-qualified names match \\\"java.*\\\").\", matcher.group(1)));");
+    System.out.println("  }");
+    System.out.println();
+    System.out.println("  pattern = Pattern.compile(\"(false|true)\\\\s*(==|!=)|(==|!=)\\\\s*(false|true)\", Pattern.MULTILINE);");
+    System.out.println("  matcher = pattern.matcher(src);");
+    System.out.println("  if (matcher.find()) {");
+    System.out.println("    Assert.fail(String.format(\"Class " + clazz.getName() + " contains the comparison \\\"%s\\\". Simplify your code; you never need compare to a boolean literal. Eliminate \\\"== true\\\" and \\\"!= false\\\" altogether. Rewrite \\\"== false\\\" and \\\"!= true\\\" to use the ! operator. With meaningful variable names, your code will be much more readable without these comparisons to boolean literals.\", matcher.group()));");
+    System.out.println("  }");
   }
 
   /**
