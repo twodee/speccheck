@@ -57,7 +57,7 @@ public class SpecCheckTestSuite {
       }
       typePattern += ")";
 
-      Pattern pattern = Pattern.compile("^\\s*" + typePattern + "(?:\\s*\\[\\s*\\])*\\s+(\\w+)\\s*(?:=(?!=)|,|;)", Pattern.MULTILINE);
+      Pattern pattern = Pattern.compile("\\b" + typePattern + "(?:\\s*\\[\\s*\\])*\\s+(\\w+)\\s*(?:=(?!=)|,|;|\\))", Pattern.MULTILINE);
 
       Set<String> ids = new HashSet<String>();
       for (String srcPath : sources) {
