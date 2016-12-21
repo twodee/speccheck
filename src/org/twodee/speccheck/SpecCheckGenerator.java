@@ -18,6 +18,7 @@
 
 package org.twodee.speccheck;
 
+import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 import java.io.ByteArrayOutputStream;
@@ -55,6 +56,7 @@ public class SpecCheckGenerator {
   private ArrayList<String> filesToZip = new ArrayList<String>();
   private String pathToSource = null;
   private Set<String> importLines = new TreeSet<String>();
+  private ArrayList<String> extraTypes = new ArrayList<String>();
 
   public SpecCheckGenerator() {
   }
@@ -77,6 +79,10 @@ public class SpecCheckGenerator {
     while (importMatcher.find()) {
       importLines.add(importMatcher.group());
     }
+  }
+
+  public void addExtraTypes(String... types) {
+    extraTypes.addAll(Arrays.asList(types));
   }
 
   public void setTag(String tag) {
@@ -199,6 +205,18 @@ public class SpecCheckGenerator {
     if (unitTests != null) {
       suiteSource = suiteSource.replaceFirst("(?<=class SpecCheckUnitTests \\{)", Matcher.quoteReplacement(unitTests));
     }
+
+    if (extraTypes.size() > 0) {
+      String types = "";
+      for (int i = 0; i < extraTypes.size(); ++i) {
+        if (i > 0) {
+          types += ", ";
+        }
+        types += "\"" + extraTypes.get(i) + "\"";
+      }
+      suiteSource = suiteSource.replaceFirst("// EXTRATYPES", Matcher.quoteReplacement("extraTypes.addAll(Arrays.asList(" + types + "));"));
+    }
+
     namesToSources.put("SpecCheckTestSuite.java", suiteSource);
     
     // Append all the helpers to omni, stripping out the public.
@@ -318,17 +336,41 @@ public class SpecCheckGenerator {
     String path = "src/" + clazz.getName().replace('.', '/') + ".java";
     System.out.println("  // Check sourcies");
     System.out.println("  String srcPath = \"" + path + "\";");
+    System.out.println("  sources.add(srcPath);");
     System.out.println("  String src = FileUtilities.slurp(srcPath);");
-    System.out.println("  Pattern pattern = Pattern.compile(\"^\\\\s*import\\\\s+(?!org\\\\.twodee\\\\.)(?!java\\\\.)(?!javax\\\\.)(.*?)\\\\s*;\", Pattern.MULTILINE);");
+    System.out.println("  Pattern pattern = Pattern.compile(\"^\\\\s*import\\\\s+(?!hw\\\\d+.)(?!org\\\\.twodee\\\\.)(?!java\\\\.)(?!javax\\\\.)(.*?)\\\\s*;\", Pattern.MULTILINE);");
     System.out.println("  Matcher matcher = pattern.matcher(src);");
     System.out.println("  if (matcher.find()) {");
-    System.out.println("    Assert.fail(String.format(\"Class " + clazz.getName() + " imports %s. You may only import classes from standard packages (those whose fully-qualified names match \\\"java.*\\\").\", matcher.group(1)));");
+    System.out.println("    Assert.fail(String.format(\"Class " + clazz.getName() + " imports %s. You may only import classes from standard packages (those whose fully-qualified names match \\\"java.*\\\"). Not every machine supports the non-standard packages.\", matcher.group(1)));");
     System.out.println("  }");
     System.out.println();
     System.out.println("  pattern = Pattern.compile(\"(false|true)\\\\s*(==|!=)|(==|!=)\\\\s*(false|true)\", Pattern.MULTILINE);");
     System.out.println("  matcher = pattern.matcher(src);");
     System.out.println("  if (matcher.find()) {");
     System.out.println("    Assert.fail(String.format(\"Class " + clazz.getName() + " contains the comparison \\\"%s\\\". Simplify your code; you never need compare to a boolean literal. Eliminate \\\"== true\\\" and \\\"!= false\\\" altogether. Rewrite \\\"== false\\\" and \\\"!= true\\\" to use the ! operator. With meaningful variable names, your code will be much more readable without these comparisons to boolean literals.\", matcher.group()));");
+    System.out.println("  }");
+    System.out.println();
+
+    // Carriage return
+    System.out.println("  pattern = Pattern.compile(\"\\\\\\\\r\");");
+    System.out.println("  matcher = pattern.matcher(src);");
+    System.out.println("  if (matcher.find()) {");
+    System.out.println("    Assert.fail(String.format(\"Class " + clazz.getName() + " contains a carriage return character (\\\\r). Carriage returns are only valid on the Windows operating system. Please use a cross-platform way of generating linebreaks, such as println, %%n in format strings, or System.lineSeparator().\", matcher.group()));");
+    System.out.println("  }");
+    System.out.println();
+
+    // Linefeed
+    System.out.println("  pattern = Pattern.compile(\"\\\\\\\\n\");");
+    System.out.println("  matcher = pattern.matcher(src);");
+    System.out.println("  if (matcher.find()) {");
+    System.out.println("    Assert.fail(String.format(\"Class " + clazz.getName() + " contains a linefeed character (\\\\n). Linefeeds are not valid on all operating systems. Please use a cross-platform way of generating linebreaks, such as println, %%n in format strings, or System.lineSeparator().\", matcher.group()));");
+    System.out.println("  }");
+ 
+    // Windows backslashes
+    System.out.println("  pattern = Pattern.compile(\"\\\\\\\\\\\\\\\\\");");
+    System.out.println("  matcher = pattern.matcher(src);");
+    System.out.println("  if (matcher.find()) {");
+    System.out.println("    Assert.fail(String.format(\"Class " + clazz.getName() + " contains what looks like a Windows-only directory separator (\\\\, but escaped). Backslash is only valid on Windows and not other operating systems. Please use a cross-platform way of separating directories, such as forward slash (/), the File(parentDirectory, child) constructor, or File.separator.\", matcher.group()));");
     System.out.println("  }");
   }
 

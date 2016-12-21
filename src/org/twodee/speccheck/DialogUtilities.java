@@ -1,5 +1,10 @@
 package org.twodee.speccheck;
 
+import javax.swing.JScrollPane;
+import java.awt.BorderLayout;
+import javax.swing.BoxLayout;
+import javax.swing.JList;
+import java.util.ArrayList;
 import java.util.ArrayList;
 import java.awt.Insets;
 import javax.swing.JLabel;
@@ -72,7 +77,7 @@ public class DialogUtilities {
     return p.getValue().equals(new Integer(JOptionPane.YES_OPTION));
   }
 
-  public static boolean isChecked(String... messages) {
+  public static boolean isChecked(String title, String... messages) {
     JPanel panel = new JPanel(new GridBagLayout());
     GridBagConstraints c = new GridBagConstraints();
     c.gridy = 0;
@@ -93,7 +98,7 @@ public class DialogUtilities {
     }
 
     JOptionPane p = new JOptionPane(panel, JOptionPane.QUESTION_MESSAGE, JOptionPane.DEFAULT_OPTION);
-    final JDialog d = p.createDialog("Manual Check");
+    final JDialog d = p.createDialog(title);
 
     d.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
     d.setModalityType(ModalityType.MODELESS);
@@ -149,5 +154,67 @@ public class DialogUtilities {
       }
     }
     return true;
+  }
+
+  public static boolean isListOkay(String title, String message, ArrayList<String> items) {
+    JPanel panel = new JPanel(new BorderLayout());
+    panel.add(new JLabel("<html>" + StringUtilities.wrap(message, 50).replace("\n", "<br>") + "</html>"), BorderLayout.NORTH);
+    JList list = new JList(items.toArray());
+    list.setVisibleRowCount(15);
+    JScrollPane scroller = new JScrollPane(list);
+    panel.add(scroller);
+
+    JOptionPane p = new JOptionPane(panel, JOptionPane.QUESTION_MESSAGE, JOptionPane.YES_NO_OPTION);
+    final JDialog d = p.createDialog(title);
+
+    d.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+    d.setModalityType(ModalityType.MODELESS);
+
+    p.addPropertyChangeListener(new PropertyChangeListener() {
+      @Override
+      public void propertyChange(PropertyChangeEvent event) {
+        if (event.getPropertyName().equals("value")) {
+          d.dispose();
+        }
+      }
+    });
+
+    final String lock = "glabber";
+
+    d.addWindowListener(new WindowAdapter() {
+      @Override
+      public void windowClosed(WindowEvent arg0) {
+        synchronized (lock) {
+          d.setVisible(false);
+          lock.notify();
+        }
+      }
+    });
+    d.setVisible(true);
+
+    Thread t = new Thread() {
+      public void run() {
+        synchronized (lock) {
+          while (d.isVisible()) {
+            try {
+              lock.wait();
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      }
+    };
+
+    t.start();
+    while (t != null) {
+      try {
+        t.join();
+        t = null;
+      } catch (InterruptedException e) {
+      }
+    }
+
+    return p.getValue().equals(new Integer(JOptionPane.YES_OPTION));
   }
 }

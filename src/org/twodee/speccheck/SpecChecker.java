@@ -1,5 +1,6 @@
 package org.twodee.speccheck;
 
+import java.util.HashSet;
 import java.awt.Color;
 import java.awt.Dialog.ModalityType;
 import java.awt.Font;
