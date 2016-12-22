@@ -33,12 +33,20 @@ public class SpecCheckTestSuite {
         URLConnection connection = url.openConnection();
         InputStream is = connection.getInputStream();
         Scanner in = new Scanner(is);
-        int expectedVersion = in.nextInt();
+
+        int expectedVersion = actualVersion;
+        if (in.hasNext()) {
+          expectedVersion = in.nextInt();
+        } else {
+          System.err.println("Homework was not registered with the server. Unable to validate SpecChecker version.");
+        }
+
         in.close();
 
         if (expectedVersion != actualVersion) {
           Assert.fail("You are running a SpecChecker that is out of date. Please pull down the latest version from the template remote.");
         }
+
       } catch (UnknownHostException e) {
         System.err.println("Host www.twodee.org was inaccessible. Unable to validate SpecChecker version.");
       } catch (Exception e) {
@@ -62,7 +70,7 @@ public class SpecCheckTestSuite {
     public void testCommitted() throws IOException {
       // IDs
       Set<String> types = new HashSet<String>();
-      types.addAll(Arrays.asList("double", "char", "boolean", "float", "short", "long", "int", "byte", "Scanner", "String", "Random", "File", "BufferedImage", "Date", "GregorianCalendar"));
+      types.addAll(Arrays.asList("double", "char", "boolean", "float", "short", "long", "int", "byte", "Scanner", "String", "Random", "File", "BufferedImage", "Date", "GregorianCalendar", "ArrayList", "Double", "Character", "Integer", "Boolean", "PrintWriter"));
 
       for (String srcPath : sources) {
         Pattern pattern = Pattern.compile("(\\w+)\\.java$");
