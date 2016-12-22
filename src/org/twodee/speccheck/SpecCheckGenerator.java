@@ -52,7 +52,10 @@ import java.util.regex.Pattern;
  */
 public class SpecCheckGenerator {
   private String unitTests = null;
+  private String course;
+  private String semester;
   private String tag;
+  private int version;
   private ArrayList<String> filesToZip = new ArrayList<String>();
   private String pathToSource = null;
   private Set<String> importLines = new TreeSet<String>();
@@ -89,6 +92,13 @@ public class SpecCheckGenerator {
     this.tag = tag;
   }
 
+  public void setMeta(String course, String semester, String tag, int version) {
+    this.course = course;
+    this.semester = semester;
+    this.tag = tag;
+    this.version = version;
+  }
+
   public void setFilesToZip(String... paths) {
     File[] files = new File[paths.length];
     for (int i = 0; i < paths.length; ++i) {
@@ -114,20 +124,24 @@ public class SpecCheckGenerator {
   }
 
   private String get(Class<?>... clazzes) throws ClassNotFoundException {
-    ByteArrayOutputStream newOut = new ByteArrayOutputStream();
     PrintStream oldOut = System.out;
     String generated = null;
     String preTests = "";
     String interfaceTests = "";
 
+    ByteArrayOutputStream newOut = new ByteArrayOutputStream();
     try {
       System.setOut(new PrintStream(newOut));
+      System.out.println();
+      generateVersionTest();
+      System.out.println();
       SpecCheckGenerator.generateClassExistenceTest(clazzes);
     } finally {
       System.setOut(oldOut);
       preTests = newOut.toString();
     }
 
+    newOut.reset();
     try {
       System.setOut(new PrintStream(newOut));
       for (Class<?> clazz : clazzes) {
@@ -173,6 +187,12 @@ public class SpecCheckGenerator {
 
   private String substitute(String preTests,
                             String interfaceTests) throws IOException {
+    System.out.println("/* -----------------");
+    System.out.println(preTests);
+    System.out.println("______________________");
+    System.out.println(interfaceTests);
+    System.out.println("*/");
+
     // Collect up all the source files.
     File packageDirectory = new File(pathToSource, "/src/org/twodee/speccheck");
     File[] sources = packageDirectory.listFiles(new FilenameFilter() {
@@ -255,8 +275,16 @@ public class SpecCheckGenerator {
     return omniSource;
   }
 
-  static void generateClassExistenceTest(Class<?>... clazzes) {
+  void generateVersionTest() {
     System.out.println("@SpecCheckTest(order=0)");
+    System.out.println("@Test");
+    System.out.println("public void testForVersion() throws Exception {");
+    System.out.printf("  assertVersion(\"%s\", \"%s\", \"%s\", %d);%n", course, semester, tag, version);
+    System.out.println("}");
+  }
+
+  static void generateClassExistenceTest(Class<?>... clazzes) {
+    System.out.println("@SpecCheckTest(order=1)");
     System.out.println("@Test");
     System.out.println("public void testForClasses() throws Exception {");
     for (Class<?> clazz : clazzes) {

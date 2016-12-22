@@ -1,5 +1,10 @@
 package org.twodee.speccheck;
 
+import java.net.UnknownHostException;
+import java.util.Scanner;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.Arrays;
 import java.io.IOException;
 import java.util.regex.Matcher;
@@ -17,6 +22,29 @@ public class SpecCheckTestSuite {
 
   static {
     // EXTRATYPES
+  }
+
+  public static void assertVersion(String course, String semester, String homework, int actualVersion) {
+    if (course == null || semester == null || homework == null || actualVersion == 0) {
+      System.err.println("No meta data provided. Unable to validate SpecChecker version.");
+    } else {
+      try {
+        URL url = new URL(String.format("http://www.twodee.org/teaching/vspec.php?course=%s&semester=%s&homework=%s", course, semester, homework));
+        URLConnection connection = url.openConnection();
+        InputStream is = connection.getInputStream();
+        Scanner in = new Scanner(is);
+        int expectedVersion = in.nextInt();
+        in.close();
+
+        if (expectedVersion != actualVersion) {
+          Assert.fail("You are running a SpecChecker that is out of date. Please pull down the latest version from the template remote.");
+        }
+      } catch (UnknownHostException e) {
+        System.err.println("Host www.twodee.org was inaccessible. Unable to validate SpecChecker version.");
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
   }
 
   public static class SpecCheckPreTests {

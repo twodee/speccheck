@@ -183,7 +183,11 @@ public class SpecChecker {
       System.out.print(StringUtilities.wrap("High five. You have passed all tests.", WRAP_COLUMNS));
       return 0;
     } else if (!hasLaterWeek) {
-      System.out.print(StringUtilities.wrap("You've not passed all tests. But you will! Keep at it.", WRAP_COLUMNS));
+      if (isGrading) {
+        System.out.print(StringUtilities.wrap("You have not passed all tests.", WRAP_COLUMNS));
+      } else {
+        System.out.print(StringUtilities.wrap("You have not passed all tests. But you will! Keep at it.", WRAP_COLUMNS));
+      }
       return 20;
     } else if (results.hasSpecCheckTests() && results.isSpecCompliant()) {
       System.out.printf(StringUtilities.wrap("You've not passed all tests. However, you've passed enough tests to qualify for later-week submission. Now commit and push before the deadline.%n", WRAP_COLUMNS));
