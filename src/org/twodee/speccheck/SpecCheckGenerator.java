@@ -187,11 +187,11 @@ public class SpecCheckGenerator {
 
   private String substitute(String preTests,
                             String interfaceTests) throws IOException {
-    System.out.println("/* -----------------");
-    System.out.println(preTests);
-    System.out.println("______________________");
-    System.out.println(interfaceTests);
-    System.out.println("*/");
+    /* System.out.println("/* -----------------"); */
+    /* System.out.println(preTests); */
+    /* System.out.println("______________________"); */
+    /* System.out.println(interfaceTests); */
+    //System.out.println("*/");
 
     // Collect up all the source files.
     File packageDirectory = new File(pathToSource, "/src/org/twodee/speccheck");
@@ -366,7 +366,7 @@ public class SpecCheckGenerator {
     System.out.println("  String srcPath = \"" + path + "\";");
     System.out.println("  sources.add(srcPath);");
     System.out.println("  String src = FileUtilities.slurp(srcPath);");
-    System.out.println("  Pattern pattern = Pattern.compile(\"^\\\\s*import\\\\s+(?!hw\\\\d+.)(?!org\\\\.twodee\\\\.)(?!java\\\\.)(?!javax\\\\.)(.*?)\\\\s*;\", Pattern.MULTILINE);");
+    System.out.println("  Pattern pattern = Pattern.compile(\"^\\\\s*import\\\\s+(?!hw\\\\d+.)(?!org\\\\.twodee\\\\.)(?!java\\\\.)(?!javafx\\\\.)(?!javax\\\\.)(.*?)\\\\s*;\", Pattern.MULTILINE);");
     System.out.println("  Matcher matcher = pattern.matcher(src);");
     System.out.println("  if (matcher.find()) {");
     System.out.println("    Assert.fail(String.format(\"Class " + clazz.getName() + " imports %s. You may only import classes from standard packages (those whose fully-qualified names match \\\"java.*\\\"). Not every machine supports the non-standard packages.\", matcher.group(1)));");

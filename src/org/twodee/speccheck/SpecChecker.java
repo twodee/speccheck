@@ -78,6 +78,7 @@ public class SpecChecker {
   private static final String tag = "hw";
   private static final String[] filesToZip = {};
   public static boolean isGrading = false;
+  public static boolean runChecklist = true;
 
   public static void run(String[] args) {
     boolean hasLaterWeek = false;

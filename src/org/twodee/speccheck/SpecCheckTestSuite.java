@@ -67,7 +67,7 @@ public class SpecCheckTestSuite {
   public static class SpecCheckPostTests {
     @SpecCheckTest(order=100, runWhenGrading=false)
     @Test
-    public void testCommitted() throws IOException {
+    public void testIdentifiers() throws IOException {
       // IDs
       Set<String> types = new HashSet<String>();
       types.addAll(Arrays.asList("double", "char", "boolean", "float", "short", "long", "int", "byte", "Scanner", "String", "Random", "File", "BufferedImage", "Date", "GregorianCalendar", "ArrayList", "Double", "Character", "Integer", "Boolean", "PrintWriter"));
@@ -106,6 +106,14 @@ public class SpecCheckTestSuite {
 
       if (ids.size() > 0 && !DialogUtilities.isListOkay("Identifiers", "Variable names are important. Bad names mislead, confuse, and frustrate. Good names accurately describe the data they hold, are readable and pronounceable, follow camelCaseConventions, and will still make sense in a week's time. Following are some variable names from your code. Are they good names?", new ArrayList(ids))) {
         Assert.fail("Some of your variable names need improvement.");
+      }
+    }
+
+    @SpecCheckTest(order=101, runWhenGrading=false)
+    @Test
+    public void testFinalChecklist() throws IOException {
+      if (!SpecChecker.runChecklist) {
+        return;
       }
 
       // Checklist
