@@ -24,6 +24,12 @@ public class SpecCheckTestSuite {
     // EXTRATYPES
   }
 
+  public static void assertEquals(String message, int expected, int actual) {
+    if (expected != actual) {
+      throw new AssertionError(String.format("%s%n      This is what I expected: %d%n  This is what I actually got: %d", message, expected, actual));
+    }
+  }
+
   public static void assertVersion(String course, String semester, String homework, int actualVersion) {
     if (course == null || semester == null || homework == null || actualVersion == 0) {
       System.err.println("No meta data provided. Unable to validate SpecChecker version.");
