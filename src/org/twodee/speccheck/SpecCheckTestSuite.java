@@ -34,6 +34,29 @@ public class SpecCheckTestSuite {
     }
   }
 
+  public static void assertEquals(String message, String expected, String actual) {
+    if (!expected.equals(actual)) {
+      expected = expected.replaceAll("\n", "\\\\n");
+      actual = actual.replaceAll("\n", "\\\\n");
+      expected = expected.replaceAll("\r", "\\\\r");
+      actual = actual.replaceAll("\r", "\\\\r");
+
+      String diff = "";
+      for (int i = 0; i < expected.length() || i < actual.length(); ++i) {
+        if (i < expected.length() && i < actual.length() && expected.charAt(i) == actual.charAt(i)) {
+          diff += ' ';
+        } else {
+          diff += '^';
+        }
+      }
+
+      throw new AssertionError(String.format("%s%n" +
+                                             "      This is what I expected: %s%n" +
+                                             "  This is what I actually got: %s%n" +
+                                             "                  Differences: %s", message, expected, actual, diff));
+    }
+  }
+
   public static void assertEquals(String message, Color expected, Color actual) {
     if (!expected.equals(actual)) {
       throw new AssertionError(String.format("%s%n      This is the RGBA color I expected: (%3d, %3d, %3d, %3d)%n  This is the RGBA color I actually got: (%3d, %3d, %3d, %3d)", message, expected.getRed(), expected.getGreen(), expected.getBlue(), expected.getAlpha(), actual.getRed(), actual.getGreen(), actual.getBlue(), actual.getAlpha()));
