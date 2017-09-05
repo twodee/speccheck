@@ -146,16 +146,22 @@ public class SpecCheckTestSuite {
   }
 
   private static boolean equalColors(int expected, int actual, int tolerance) {
-    Color expectedColor = new Color(expected);
-    Color actualColor = new Color(actual);
+    Color expectedColor = new Color(expected, true);
+    Color actualColor = new Color(actual, true);
     return Math.abs(expectedColor.getRed() - actualColor.getRed()) <= tolerance &&
            Math.abs(expectedColor.getGreen() - actualColor.getGreen()) <= tolerance &&
-           Math.abs(expectedColor.getBlue() - actualColor.getBlue()) <= tolerance;
+           Math.abs(expectedColor.getBlue() - actualColor.getBlue()) <= tolerance &&
+           Math.abs(expectedColor.getAlpha() - actualColor.getAlpha()) <= tolerance;
   }
 
   public static void assertEquals(boolean isVisual, String method, BufferedImage expected, BufferedImage actual, int tolerance) {
     assertEquals("Method " + method + " produced an image whose width was different than expected.", expected.getWidth(), actual.getWidth());
     assertEquals("Method " + method + " produced an image whose height was different than expected.", expected.getHeight(), actual.getHeight());
+
+    // Images that have been written and read using ImageIO.write/read may not
+    // have the same type that they were created with, so checking for types
+    // is not so fun.
+    /* assertEquals("Method " + method + " produced an image whose type was different than expected.", expected.getType(), actual.getType()); */
 
     for (int r = 0; r < expected.getHeight(); ++r) {
       for (int c = 0; c < expected.getWidth(); ++c) {
@@ -165,7 +171,7 @@ public class SpecCheckTestSuite {
             CompareFrame<JLabel> comparer = new CompareFrame<JLabel>(false);
             comparer.compare(msg, new JLabel(new ImageIcon(expected)), new JLabel(new ImageIcon(actual)));
           }
-          assertEquals(msg, new Color(expected.getRGB(c, r)), new Color(actual.getRGB(c, r)));
+          assertEquals(msg, new Color(expected.getRGB(c, r), true), new Color(actual.getRGB(c, r), true));
         }
       }
     }
