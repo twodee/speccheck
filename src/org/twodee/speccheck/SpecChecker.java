@@ -74,7 +74,7 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 
 public class SpecChecker {
-  private static final int WRAP_COLUMNS = 80;
+  public static final int WRAP_COLUMNS = 80;
   private static final String tag = "hw";
   private static final String[] filesToZip = {};
   public static boolean isGrading = false;
@@ -166,7 +166,8 @@ public class SpecChecker {
             System.out.println(f.getException().getClass());
             f.getException().printStackTrace(System.out);
           } else {
-            System.out.printf("%s%n", StringUtilities.wrap(f.getException().getLocalizedMessage(), WRAP_COLUMNS));
+            /* System.out.printf("%s%n", StringUtilities.wrap(f.getException().getLocalizedMessage(), WRAP_COLUMNS)); */
+            System.out.printf("%s%n", f.getException().getLocalizedMessage(), WRAP_COLUMNS);
           }
           System.out.printf("%n");
         }

@@ -30,35 +30,49 @@ public class SpecCheckTestSuite {
 
   public static void assertEquals(String message, int expected, int actual) {
     if (expected != actual) {
+      message = StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS);
       throw new AssertionError(String.format("%s%n      This is what I expected: %d%n  This is what I actually got: %d", message, expected, actual));
     }
   }
 
   public static void assertEquals(String message, String expected, String actual) {
     if (!expected.equals(actual)) {
-      expected = expected.replaceAll("\n", "\\\\n");
-      actual = actual.replaceAll("\n", "\\\\n");
-      expected = expected.replaceAll("\r", "\\\\r");
-      actual = actual.replaceAll("\r", "\\\\r");
+      message = StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS);
+      String[] expecteds = expected.split("(?<=\r?\n)");
+      String[] actuals = actual.split("(?<=\r?\n)");
 
-      String diff = "";
-      for (int i = 0; i < expected.length() || i < actual.length(); ++i) {
-        if (i < expected.length() && i < actual.length() && expected.charAt(i) == actual.charAt(i)) {
-          diff += ' ';
-        } else {
-          diff += '^';
+      for (int iline = 0; iline < expecteds.length || iline < actuals.length; ++iline) {
+
+        String expectedLine = iline < expecteds.length ? expecteds[iline] : "";
+        String actualLine = iline < actuals.length ? actuals[iline] : "";
+
+        expectedLine = expectedLine.replaceAll("\n", "\\\\n");
+        actualLine = actualLine.replaceAll("\n", "\\\\n");
+        expectedLine = expectedLine.replaceAll("\r", "\\\\r");
+        actualLine = actualLine.replaceAll("\r", "\\\\r");
+
+        if (!expectedLine.equals(actualLine)) {
+          String diff = "";
+          for (int i = 0; i < expectedLine.length() || i < actualLine.length(); ++i) {
+            if (i < expectedLine.length() && i < actualLine.length() && expectedLine.charAt(i) == actualLine.charAt(i)) {
+              diff += ' ';
+            } else {
+              diff += '^';
+            }
+          }
+
+          throw new AssertionError(String.format("%s%n" +
+                                                 "      This is what I expected for line %d: %s%n" +
+                                                 "  This is what I actually got for line %d: %s%n" +
+                                                 "                  Differences for line %d: %s", message, iline + 1, expectedLine, iline + 1, actualLine, iline + 1, diff));
         }
       }
-
-      throw new AssertionError(String.format("%s%n" +
-                                             "      This is what I expected: %s%n" +
-                                             "  This is what I actually got: %s%n" +
-                                             "                  Differences: %s", message, expected, actual, diff));
     }
   }
 
   public static void assertEquals(String message, Color expected, Color actual) {
     if (!expected.equals(actual)) {
+      message = StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS);
       throw new AssertionError(String.format("%s%n      This is the RGBA color I expected: (%3d, %3d, %3d, %3d)%n  This is the RGBA color I actually got: (%3d, %3d, %3d, %3d)", message, expected.getRed(), expected.getGreen(), expected.getBlue(), expected.getAlpha(), actual.getRed(), actual.getGreen(), actual.getBlue(), actual.getAlpha()));
     }
   }
