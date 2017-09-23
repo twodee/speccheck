@@ -35,36 +35,49 @@ public class SpecCheckTestSuite {
     }
   }
 
+  public static void assertEquals(String message, double expected, double actual, double epsilon) {
+    if (Math.abs(actual - expected) > epsilon) {
+      message = StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS);
+      throw new AssertionError(String.format("%s%n      This is what I expected: %.6f%n  This is what I actually got: %.6f", message, expected, actual));
+    }
+  }
+
   public static void assertEquals(String message, String expected, String actual) {
     if (!expected.equals(actual)) {
       message = StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS);
       String[] expecteds = expected.split("(?<=\r?\n)");
       String[] actuals = actual.split("(?<=\r?\n)");
 
-      for (int iline = 0; iline < expecteds.length || iline < actuals.length; ++iline) {
-
-        String expectedLine = iline < expecteds.length ? expecteds[iline] : "";
-        String actualLine = iline < actuals.length ? actuals[iline] : "";
+      for (int iLine = 0; iLine < expecteds.length || iLine < actuals.length; ++iLine) {
+        String expectedLine = iLine < expecteds.length ? expecteds[iLine] : "";
+        String actualLine = iLine < actuals.length ? actuals[iLine] : "";
 
         expectedLine = expectedLine.replaceAll("\n", "\\\\n");
         actualLine = actualLine.replaceAll("\n", "\\\\n");
         expectedLine = expectedLine.replaceAll("\r", "\\\\r");
         actualLine = actualLine.replaceAll("\r", "\\\\r");
 
-        if (!expectedLine.equals(actualLine)) {
-          String diff = "";
-          for (int i = 0; i < expectedLine.length() || i < actualLine.length(); ++i) {
-            if (i < expectedLine.length() && i < actualLine.length() && expectedLine.charAt(i) == actualLine.charAt(i)) {
-              diff += ' ';
-            } else {
-              diff += '^';
-            }
-          }
+        if (iLine >= actuals.length) {
+          throw new AssertionError(String.format("%s%n  This is what I expected for line %d: \"%s\"%n  But I didn't get line %d from you at all.", message, iLine + 1, expectedLine, iLine + 1));
+        } else if (iLine >= expecteds.length) {
+          throw new AssertionError(String.format("%s%n  I didn't expect a line %d.%n  But this is what I actually got for line %d: \"%s\"%n", message, iLine + 1, iLine + 1, actualLine));
+        } else {
 
-          throw new AssertionError(String.format("%s%n" +
-                                                 "      This is what I expected for line %d: %s%n" +
-                                                 "  This is what I actually got for line %d: %s%n" +
-                                                 "                  Differences for line %d: %s", message, iline + 1, expectedLine, iline + 1, actualLine, iline + 1, diff));
+          if (!expectedLine.equals(actualLine)) {
+            String diff = "";
+            for (int i = 0; i < expectedLine.length() || i < actualLine.length(); ++i) {
+              if (i < expectedLine.length() && i < actualLine.length() && expectedLine.charAt(i) == actualLine.charAt(i)) {
+                diff += ' ';
+              } else {
+                diff += '^';
+              }
+            }
+
+            throw new AssertionError(String.format("%s%n" +
+                                                   "      This is what I expected for line %d: \"%s\"%n" +
+                                                   "  This is what I actually got for line %d: \"%s\"%n" +
+                                                   "                  Differences for line %d:  %s", message, iLine + 1, expectedLine, iLine + 1, actualLine, iLine + 1, diff));
+          }
         }
       }
     }
