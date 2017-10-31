@@ -204,9 +204,9 @@ public class SpecCheckTestSuite {
            Math.abs(expectedColor.getAlpha() - actualColor.getAlpha()) <= tolerance;
   }
 
-  public static void assertEquals(boolean isVisual, String method, BufferedImage expected, BufferedImage actual, int tolerance) {
-    assertEquals("Method " + method + " produced an image whose width was different than expected.", expected.getWidth(), actual.getWidth());
-    assertEquals("Method " + method + " produced an image whose height was different than expected.", expected.getHeight(), actual.getHeight());
+  public static void assertEquals(boolean isVisual, String message, BufferedImage expected, BufferedImage actual, int tolerance) {
+    assertEquals(message + "But it produced an image whose width was different than expected.", expected.getWidth(), actual.getWidth());
+    assertEquals(message + "But it produced an image whose height was different than expected.", expected.getHeight(), actual.getHeight());
 
     // Images that have been written and read using ImageIO.write/read may not
     // have the same type that they were created with, so checking for types
@@ -216,7 +216,7 @@ public class SpecCheckTestSuite {
     for (int r = 0; r < expected.getHeight(); ++r) {
       for (int c = 0; c < expected.getWidth(); ++c) {
         if (!equalColors(expected.getRGB(c, r), actual.getRGB(c, r), tolerance)) {
-          String msg = "Method " + method + " produced an image whose pixel (" + c + ", " + r + ") was not the expected color.";
+          String msg = message + "But it produced an image whose pixel (" + c + ", " + r + ") was not the expected color.";
           if (isVisual) {
             CompareFrame<JLabel> comparer = new CompareFrame<JLabel>(false);
             comparer.compare(msg, new JLabel(new ImageIcon(expected)), new JLabel(new ImageIcon(actual)));
