@@ -28,6 +28,13 @@ public class SpecCheckTestSuite {
     // EXTRATYPES
   }
 
+  public static void assertNotNull(String message, Object object) {
+    if (object == null) {
+      String expanded = String.format("%s But the result was null, which is not what I expected.", message);
+      throw new AssertionError(StringUtilities.wrap(expanded, SpecChecker.WRAP_COLUMNS));
+    }
+  }
+
   public static void assertEquals(String message, int expected, int actual) {
     if (expected != actual) {
       message = StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS);
@@ -39,6 +46,13 @@ public class SpecCheckTestSuite {
     if (Math.abs(actual - expected) > epsilon) {
       message = StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS);
       throw new AssertionError(String.format("%s%n      This is what I expected: %.6f%n  This is what I actually got: %.6f", message, expected, actual));
+    }
+  }
+
+  public static void assertEquals(String message, Object expected, Object actual) {
+    if (!expected.equals(actual)) {
+      message = StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS);
+      throw new AssertionError(String.format("%s%n      This is what I expected: %s%n  This is what I actually got: %s", message, expected.toString(), actual.toString()));
     }
   }
 
