@@ -30,9 +30,71 @@ public class SpecCheckTestSuite {
 
   public static void assertNotNull(String message, Object object) {
     if (object == null) {
-      String expanded = String.format("%s But the result was null, which is not what I expected.", message);
+      String expanded = String.format(message);
       throw new AssertionError(StringUtilities.wrap(expanded, SpecChecker.WRAP_COLUMNS));
     }
+  }
+
+  // Assumes a and b have same cardinalities.
+  public static void assertIndependent(String message, boolean[][] a, boolean[][] b) {
+    if (a == b) {
+      message += " But the array I got back is not independent of the source array. You need to make a brand new array.";
+      throw new AssertionError(String.format("%s", StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS)));
+    }
+
+    for (int r = 0; r < a.length; ++r) {
+      if (a[r] == b[r]) {
+        message += String.format(" But the inner array at index %d is not independent of the source array. You need to make a brand new array.", r);
+        throw new AssertionError(String.format("%s", StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS)));
+      }
+    }
+  }
+
+  public static void assertEquals(String message, boolean[][] expected, boolean[][] actual) {
+    if (expected.length != actual.length) {
+      message += " But the outer array had a different length than I expected.";
+      throw new AssertionError(String.format("%s%n      This is what I expected: %d%n  This is what I actually got: %d", StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS), expected.length, actual.length));
+    }
+      
+    for (int r = 0; r < expected.length; ++r) {
+      if (expected[r].length != actual[r].length) {
+        message += " But the inner array at index " + r + " of the array I got back had a different length than I expected.";
+        throw new AssertionError(String.format("%s%n      This is what I expected: %d%n  This is what I actually got: %d", StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS), expected.length, actual.length));
+      }
+
+      for (int c = 0; c < expected[r].length; ++c) {
+        if (expected[r][c] != actual[r][c]) {
+          message += String.format(" But element [%d][%d] of the array I got back wasn't what I expected.", r, c);
+          throw new AssertionError(String.format("%s%n      This is what I expected: %d%n  This is what I actually got: %d", StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS), expected, actual));
+        }
+      }
+    }
+  }
+
+  public static <T> void assertArrayEquals(String message, T[] expected, T[] actual) {
+    if (expected.length != actual.length) {
+      message += " But the array had a different length than I expected.";
+      throw new AssertionError(String.format("%s%n      This is what I expected: %d%n  This is what I actually got: %d", StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS), expected.length, actual.length));
+    }
+      
+    for (int i = 0; i < expected.length; ++i) {
+      if (!expected[i].equals(actual[i])) {
+        message += String.format(" But element %i of the array I got back wasn't what I expected.", i);
+        throw new AssertionError(String.format("%s%n      This is what I expected: %d%n  This is what I actually got: %d", StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS), expected, actual));
+      }
+    }
+  }
+
+  private static Integer[] toObjectArray(int[] src) {
+    Integer[] dst = new Integer[src.length];
+    for (int i = 0; i < src.length; ++i) {
+      dst[i] = src[i];
+    }
+    return dst;
+  }
+
+  public static void assertEquals(String message, int[] expected, int[] actual) {
+    assertArrayEquals(message, toObjectArray(expected), toObjectArray(actual));
   }
 
   public static void assertEquals(String message, int expected, int actual) {
@@ -219,8 +281,8 @@ public class SpecCheckTestSuite {
   }
 
   public static void assertEquals(boolean isVisual, String message, BufferedImage expected, BufferedImage actual, int tolerance) {
-    assertEquals(message + "But it produced an image whose width was different than expected.", expected.getWidth(), actual.getWidth());
-    assertEquals(message + "But it produced an image whose height was different than expected.", expected.getHeight(), actual.getHeight());
+    assertEquals(message + " But it produced an image whose width was different than expected.", expected.getWidth(), actual.getWidth());
+    assertEquals(message + " But it produced an image whose height was different than expected.", expected.getHeight(), actual.getHeight());
 
     // Images that have been written and read using ImageIO.write/read may not
     // have the same type that they were created with, so checking for types
@@ -230,7 +292,7 @@ public class SpecCheckTestSuite {
     for (int r = 0; r < expected.getHeight(); ++r) {
       for (int c = 0; c < expected.getWidth(); ++c) {
         if (!equalColors(expected.getRGB(c, r), actual.getRGB(c, r), tolerance)) {
-          String msg = message + "But it produced an image whose pixel (" + c + ", " + r + ") was not the expected color.";
+          String msg = message + " But it produced an image whose pixel (" + c + ", " + r + ") was not the expected color.";
           if (isVisual) {
             CompareFrame<JLabel> comparer = new CompareFrame<JLabel>(false);
             comparer.compare(msg, new JLabel(new ImageIcon(expected)), new JLabel(new ImageIcon(actual)));
