@@ -28,6 +28,10 @@ public class SpecCheckTestSuite {
     // EXTRATYPES
   }
 
+  public static void fail(String message) {
+    throw new AssertionError(StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS));
+  }
+
   public static void assertNotNull(String message, Object object) {
     if (object == null) {
       String expanded = String.format(message);
