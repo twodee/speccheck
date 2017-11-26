@@ -176,7 +176,7 @@ public class SpecCheckTestSuite {
     for (String tag : otherHomeworkTags) {
       disjoiner.add(tag);
     }
-    Pattern pattern = Pattern.compile(disjoiner.toString());// + "\\.(?=[A-Z])");
+    Pattern pattern = Pattern.compile(disjoiner.toString() + "\\.(?=[A-Z])");
     String source = FileUtilities.slurp(sourcePath);
     Matcher matcher = pattern.matcher(source);
     if (matcher.find()) {
