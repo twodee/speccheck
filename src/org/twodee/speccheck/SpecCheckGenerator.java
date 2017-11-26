@@ -100,7 +100,7 @@ public class SpecCheckGenerator {
   }
 
   public void setMeta(String course, String semester, String tag, int version) {
-    setMeta(course, semester, tag, version);
+    setMeta(course, semester, tag, version, new String[] {});
   }
 
   public void setMeta(String course, String semester, String tag, int version, String[] allTags) {
@@ -418,8 +418,10 @@ public class SpecCheckGenerator {
     System.out.println("  }");
 
     // No dependencies
-    String tags = homeworkTags.stream().map(tag -> "\"" + tag + "\"").collect(Collectors.joining(", "));
-    System.out.printf("  assertNoDependencies(\"%s\", %s);%n", path, tags);
+    if (homeworkTags.size() > 0) {
+      String tags = homeworkTags.stream().map(tag -> "\"" + tag + "\"").collect(Collectors.joining(", "));
+      System.out.printf("  assertNoDependencies(\"%s\", %s);%n", path, tags);
+    }
   }
 
   /**
