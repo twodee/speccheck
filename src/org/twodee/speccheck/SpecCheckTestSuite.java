@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.StringJoiner;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -83,8 +84,8 @@ public class SpecCheckTestSuite {
       
     for (int i = 0; i < expected.length; ++i) {
       if (!expected[i].equals(actual[i])) {
-        message += String.format(" But element %i of the array I got back wasn't what I expected.", i);
-        throw new AssertionError(String.format("%s%n      This is what I expected: %d%n  This is what I actually got: %d", StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS), expected, actual));
+        message += String.format(" But element %d of the array I got back wasn't what I expected.", i);
+        throw new AssertionError(String.format("%s%n      This is what I expected: %s%n  This is what I actually got: %s", StringUtilities.wrap(message, SpecChecker.WRAP_COLUMNS), expected[i].toString(), actual[i].toString()));
       }
     }
   }
@@ -170,6 +171,19 @@ public class SpecCheckTestSuite {
     }
   }
 
+  public static void assertNoDependencies(String sourcePath, String... otherHomeworkTags) throws IOException {
+    StringJoiner disjoiner = new StringJoiner("|", "(", ")");
+    for (String tag : otherHomeworkTags) {
+      disjoiner.add(tag);
+    }
+    Pattern pattern = Pattern.compile(disjoiner.toString());// + "\\.(?=[A-Z])");
+    String source = FileUtilities.slurp(sourcePath);
+    Matcher matcher = pattern.matcher(source);
+    if (matcher.find()) {
+      Assert.fail(StringUtilities.wrap(String.format("I found a reference to a previous homework (%s) in %s. This homework must not reference any code from another homework assignment. If you want to reuse a method, copy it into from the old assignment to the new assignment and make it private. In general, reusing code is a good idea. But in this class, each homework is graded independently.", matcher.group(1), sourcePath), SpecChecker.WRAP_COLUMNS));
+    }
+  }
+
   public static void assertVersion(String course, String semester, String homework, int actualVersion) {
     if (course == null || semester == null || homework == null || actualVersion == 0) {
       System.err.println("No meta data provided. Unable to validate SpecChecker version.");
@@ -211,7 +225,8 @@ public class SpecCheckTestSuite {
   }
 
   public static class SpecCheckPostTests {
-    @SpecCheckTest(order=100, runWhenGrading=false)
+
+    @SpecCheckTest(order=101, runWhenGrading=false)
     @Test
     public void testIdentifiers() throws IOException {
       // IDs
@@ -255,7 +270,7 @@ public class SpecCheckTestSuite {
       }
     }
 
-    @SpecCheckTest(order=101, runWhenGrading=false)
+    @SpecCheckTest(order=102, runWhenGrading=false)
     @Test
     public void testFinalChecklist() throws IOException {
       if (!SpecChecker.runChecklist) {

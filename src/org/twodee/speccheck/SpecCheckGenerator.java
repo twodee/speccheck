@@ -20,6 +20,7 @@ package org.twodee.speccheck;
 
 import java.util.Arrays;
 import java.util.Set;
+import java.util.HashSet;
 import java.util.TreeSet;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -33,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,6 +62,7 @@ public class SpecCheckGenerator {
   private String pathToSource = null;
   private Set<String> importLines = new TreeSet<String>();
   private ArrayList<String> extraTypes = new ArrayList<String>();
+  private Set<String> homeworkTags = new HashSet<String>();
 
   public SpecCheckGenerator() {
   }
@@ -92,11 +95,24 @@ public class SpecCheckGenerator {
     this.tag = tag;
   }
 
+  public void setHomeworkTags(String[] tags) {
+
+  }
+
   public void setMeta(String course, String semester, String tag, int version) {
+    setMeta(course, semester, tag, version);
+  }
+
+  public void setMeta(String course, String semester, String tag, int version, String[] allTags) {
     this.course = course;
     this.semester = semester;
     this.tag = tag;
     this.version = version;
+    for (String allTag : allTags) {
+      if (!allTag.equals(tag)) {
+        homeworkTags.add(allTag); 
+      } 
+    }
   }
 
   public void setFilesToZip(String... paths) {
@@ -145,7 +161,7 @@ public class SpecCheckGenerator {
     try {
       System.setOut(new PrintStream(newOut));
       for (Class<?> clazz : clazzes) {
-        SpecCheckGenerator.generateClassTest(clazz);
+        generateClassTest(clazz);
       }
     } finally {
       System.setOut(oldOut);
@@ -307,7 +323,7 @@ public class SpecCheckGenerator {
    * 
    * @throws ClassNotFoundException
    */
-  static void generateClassTest(Class<?> clazz) throws ClassNotFoundException {
+  private void generateClassTest(Class<?> clazz) throws ClassNotFoundException {
     System.out.println("@SpecCheckTest(order=10)");
     System.out.println("@Test");
     System.out.println("public void test" + getReadableClassName(clazz) + "() throws Exception {");
@@ -360,7 +376,7 @@ public class SpecCheckGenerator {
     generateFieldCountTest(clazz);
   }
 
-  private static void generateSourceTests(Class<?> clazz) {
+  private void generateSourceTests(Class<?> clazz) {
     String path = "src/" + clazz.getName().replace('.', '/') + ".java";
     System.out.println("  // Check sourcies");
     System.out.println("  String srcPath = \"" + path + "\";");
@@ -400,6 +416,10 @@ public class SpecCheckGenerator {
     System.out.println("  if (matcher.find()) {");
     System.out.println("    Assert.fail(String.format(\"Class " + clazz.getName() + " contains what looks like a Windows-only directory separator (\\\\, but escaped). Backslash is only valid on Windows and not other operating systems. Please use a cross-platform way of separating directories, such as forward slash (/), the File(parentDirectory, child) constructor, or File.separator.\", matcher.group()));");
     System.out.println("  }");
+
+    // No dependencies
+    String tags = homeworkTags.stream().map(tag -> "\"" + tag + "\"").collect(Collectors.joining(", "));
+    System.out.printf("  assertNoDependencies(\"%s\", %s);%n", path, tags);
   }
 
   /**
