@@ -189,7 +189,7 @@ public class SpecCheckTestSuite {
       System.err.println("No meta data provided. Unable to validate SpecChecker version.");
     } else {
       try {
-        URL url = new URL(String.format("http://www.twodee.org/teaching/vspec.php?course=%s&semester=%s&homework=%s", course, semester, homework));
+        URL url = new URL(String.format("http://twodee.org/teaching/vspec.php?course=%s&semester=%s&homework=%s", course, semester, homework));
         URLConnection connection = url.openConnection();
         InputStream is = connection.getInputStream();
         Scanner in = new Scanner(is);
