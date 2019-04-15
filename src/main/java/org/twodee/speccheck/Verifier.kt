@@ -1,14 +1,33 @@
 package org.twodee.speccheck
 
 import com.google.gson.reflect.TypeToken
+import java.io.BufferedReader
+import java.io.File
 import java.lang.reflect.Executable
 import java.lang.reflect.InvocationTargetException
 
 object Verifier {
+  @JvmStatic
+  fun main(args: Array<String>) {
+    val tag = args[0]
+    verify(File(args[1]).readText())
+  }
+
+  fun verify(file: File) {
+    try {
+      verify(file.readText())
+    } catch (e: SpecViolation) {
+      System.err.println(e.message)
+    }
+  }
+
   fun verify(json: String) {
-    val listType = object : TypeToken<List<ClassSpecification>>() {}.type
-    val specs = Utilities.gson.fromJson<List<ClassSpecification>>(json, listType)
-    verifyClasses(specs)
+    val project = Utilities.gson.fromJson(json, ProjectSpecification::class.java)
+    verifyProject(project)
+  }
+
+  private fun verifyProject(project: ProjectSpecification) {
+    verifyClasses(project.classes)
   }
 
   private fun verifyClasses(clazzes: List<ClassSpecification>) {

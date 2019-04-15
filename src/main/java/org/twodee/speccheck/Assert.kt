@@ -57,9 +57,10 @@ object Assert {
             }
 
             throw SpecViolation("""
-  Expected line ${iLine + 1}: "$expectedLine"\n" +
-    Actual line ${iLine + 1}: "$actualLine"\n" +
-       Differences: $diff")
+$message
+  Expected line ${iLine + 1}: "$expectedLine"
+    Actual line ${iLine + 1}: "$actualLine"
+      Differences:  $diff
 """)
           }
         }

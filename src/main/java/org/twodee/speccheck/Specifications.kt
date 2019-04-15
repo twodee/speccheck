@@ -3,6 +3,11 @@ package org.twodee.speccheck
 import java.lang.reflect.Constructor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
+import kotlin.reflect.KClass
+
+class ProjectSpecification(val tag: String, val semester: String, val course: String, val version: Int) {
+  var classes = listOf<ClassSpecification>()
+}
 
 class ClassSpecification(val name: String) {
   var maxInstanceVariables: Int = 0
@@ -21,10 +26,10 @@ class ClassSpecification(val name: String) {
 
   fun hasField(field: Field): Boolean = fields.any { field.name == it.name }
   fun hasMethod(method: Method) = methods.any {
-    method.name == it.name && method.parameterTypes.map { it.canonicalName } == it.parameters
+    method.name == it.name && method.parameterTypes.map { it.name } == it.parameters
   }
   fun hasConstructor(ctor: Constructor<*>) = constructors.any {
-    ctor.parameterTypes.map { it.canonicalName } == it.parameters
+    ctor.parameterTypes.map { type -> type.name } == it.parameters
   }
 }
 

@@ -1,3 +1,5 @@
+@file:JvmName("Annotations")
+
 package org.twodee.speccheck
 
 import kotlin.reflect.KClass
