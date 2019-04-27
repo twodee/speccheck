@@ -4,6 +4,7 @@ import java.awt.Color
 import java.net.URL
 import java.net.UnknownHostException
 import java.util.*
+import java.util.regex.Pattern
 
 object Assert {
   fun assertEquals(message: String, expected: Int, actual: Int) {
@@ -22,6 +23,16 @@ object Assert {
     if (expected != actual) {
       throw SpecViolation(String.format("$message\n  Expected: $expected\n    Actual: $actual", message, expected, actual))
     }
+  }
+
+  fun assertNonMatch(message: String, pattern: Pattern, text: String) {
+    if (pattern.matcher(text).find()) {
+      throw SpecViolation(message)
+    }
+  }
+
+  fun fail(message: String) {
+    throw SpecViolation(message)
   }
 
   fun assertEquals(message: String, expected: String, actual: String) {

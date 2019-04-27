@@ -1,16 +1,19 @@
 package org.twodee.speccheck
 
-import com.google.gson.reflect.TypeToken
-import java.io.BufferedReader
 import java.io.File
 import java.lang.reflect.Executable
 import java.lang.reflect.InvocationTargetException
+import java.net.URL
+import java.net.UnknownHostException
+import java.util.*
+import java.util.regex.Pattern
+import kotlin.collections.HashSet
 
 object Verifier {
-  @JvmStatic
-  fun main(args: Array<String>) {
+  @JvmStatic fun main(args: Array<String>) {
     val tag = args[0]
     verify(File(args[1]).readText())
+    //    DialogUtilities.isListOkay("FOO", "hi", arrayOf("a", "b", "c", "d"))
   }
 
   fun verify(file: File) {
@@ -27,7 +30,10 @@ object Verifier {
   }
 
   private fun verifyProject(project: ProjectSpecification) {
+    verifyVersion(project)
     verifyClasses(project.classes)
+    verifyIdentifiers(project.classes.map { "src/${it.name.replace('.', '/')}.java" })
+    verifyChecklist(project)
   }
 
   private fun verifyClasses(clazzes: List<ClassSpecification>) {
@@ -80,17 +86,19 @@ object Verifier {
       }
 
       // Assert no extraneous public constructors.
-      clazz.publicConstructors.forEach { ctor ->
-        if (!((ctor.parameterCount == 0 && classSpecification.allowUnspecifiedDefaultCtor) || classSpecification.hasConstructor(ctor))) {
+      if (!classSpecification.allowUnspecifiedDefaultCtor) {
+        clazz.publicConstructors.find { ctor ->
+          ctor.parameterCount == 0 && !classSpecification.hasConstructor(ctor)
+        }?.let { ctor ->
           throw SpecViolation("I found an unspecified public constructor with signature (${ctor.parameterTypes.map { it.normalizeName }.joinToString(", ")}) in class ${clazz.normalizeName}. Any constructors you add should be private (or protected).")
         }
       }
 
       // Assert no extraneous public methods.
-      clazz.publicMethods.forEach { method ->
-        if (!classSpecification.hasMethod(method)) {
-          throw SpecViolation("I found an unspecified public method ${method.name}(${method.parameterTypes.map { it.normalizeName }.joinToString(", ")}) in class ${clazz.normalizeName}. Any methods you add should be private (or protected).")
-        }
+      clazz.publicMethods.find { method ->
+        !classSpecification.hasMethod(method)
+      }?.let { method ->
+        throw SpecViolation("I found an unspecified public method ${method.name}(${method.parameterTypes.map { it.normalizeName }.joinToString(", ")}) in class ${clazz.normalizeName}. Any methods you add should be private (or protected).")
       }
     }
 
@@ -106,6 +114,86 @@ object Verifier {
           throw e.targetException
         }
       }
+    }
+
+    verifyClassSource(classSpecification)
+  }
+
+  private fun verifyClassSource(classSpecification: ClassSpecification) {
+    val src = Utilities.slurp("src/${classSpecification.name.replace('.', '/')}.java")
+
+    var pattern = Pattern.compile("^\\s*import\\s+(?!hw\\d+.)(?!org\\.twodee\\.)(?!java\\.)(?!javafx\\.)(?!javax\\.)(.*?)\\s*;", Pattern.MULTILINE)
+    var matcher = pattern.matcher(src)
+    if (matcher.find()) {
+      Assert.fail("Class ${classSpecification.name} imports ${matcher.group(1)}. You may only import classes from standard packages (those whose fully-qualified names match \"java.*\"). Not every machine supports the non-standard packages.")
+    }
+
+    pattern = Pattern.compile("(false|true)\\s*(==|!=)|(==|!=)\\s*(false|true)", Pattern.MULTILINE)
+    matcher = pattern.matcher(src)
+    if (matcher.find()) {
+      Assert.fail(String.format("Class ${classSpecification.name} contains the comparison \"${matcher.group()}\". Simplify your code; you never need compare to a boolean literal. Eliminate \"== true\" and \"!= false\" altogether. Rewrite \"== false\" and \"!= true\" to use the ! operator. With meaningful variable names, your code will be much more readable without these comparisons to boolean literals.", matcher.group()))
+    }
+
+    pattern = Pattern.compile("\\\\r")
+    matcher = pattern.matcher(src)
+    if (matcher.find()) {
+      Assert.fail("Class ${classSpecification.name} contains a carriage return character (\\r). Carriage returns are only valid on the Windows operating system. Please use a cross-platform way of generating linebreaks, such as println, %n in format strings, or System.lineSeparator().")
+    }
+
+    pattern = Pattern.compile("\\\\n")
+    matcher = pattern.matcher(src)
+    if (matcher.find()) {
+      Assert.fail("Class ${classSpecification.name} contains a linefeed character (\\n). Linefeeds are not valid on all operating systems. Please use a cross-platform way of generating linebreaks, such as println, %n in format strings, or System.lineSeparator().")
+    }
+
+    pattern = Pattern.compile("\\\\\\\\")
+    matcher = pattern.matcher(src)
+    if (matcher.find()) {
+      Assert.fail("Class ${classSpecification.name} contains what looks like a Windows-only directory separator (\\, but escaped). Backslash is only valid on Windows and not other operating systems. Please use a cross-platform way of separating directories, such as forward slash (/), the File(parentDirectory, child) constructor, or File.separator.")
+    }
+  }
+
+  private fun verifyChecklist(project: ProjectSpecification) {
+    if (project.hasChecklist) {
+      return
+    }
+
+    val messages = arrayOf("I have eliminated all compilation errors from my code. In the Package Explorer, there are no red icons on any of my files and no red exclamation point on my project.", "I have committed my work to my local repository. In the Package Explorer, there are no files with greater-than signs (>) preceding their names.", "I have pushed my work to GitLab. In the Package Explorer, there are no up or down arrows followed by numbers after my project name.", "I have verified that my work is in my remote repository at http://gitlab.com.")
+    if (!DialogUtilities.isAllChecked("Final Steps", *messages)) {
+      Assert.fail("Not all items on your final steps checklist have been completed.")
+    }
+  }
+
+  private fun verifyIdentifiers(sourcePaths: List<String>) {
+    val types = HashSet<String>()
+    types.addAll(Arrays.asList("var", "double", "char", "boolean", "float", "short", "long", "int", "byte", "Scanner", "String", "Random", "File", "BufferedImage", "Date", "GregorianCalendar", "ArrayList", "Double", "Character", "Integer", "Boolean", "PrintWriter"))
+
+    // Exclude types associated with files.
+    sourcePaths.forEach { sourcePath ->
+      val pattern = Pattern.compile("(\\w+)\\.java$")
+      val matcher = pattern.matcher(sourcePath)
+      if (matcher.find()) {
+        types.add(matcher.group(1))
+      }
+    }
+
+    // TODO
+    //    types.addAll(extraTypes)
+
+    val typePattern = "(?:${types.joinToString("|")})"
+    val pattern = Pattern.compile("\\b$typePattern(?:\\s*\\[\\s*\\])*\\s+(\\w+)\\s*(?:=(?!=)|,|;|\\))", Pattern.MULTILINE)
+
+    val ids = HashSet<String>()
+    sourcePaths.forEach { sourcePath ->
+      val source = Utilities.slurp(sourcePath)
+      val matcher = pattern.matcher(source)
+      while (matcher.find()) {
+        ids.add(matcher.group(1))
+      }
+    }
+
+    if (ids.size > 0 && !DialogUtilities.isListOkay("Identifiers", "Variable names are important. Bad names mislead, confuse, and frustrate. Good names accurately describe the data they hold, are readable and pronounceable, follow camelCaseConventions, and will still make sense in a week's time. Following are some variable names from your code. Are they good names?", ids.toTypedArray())) {
+      Assert.fail("Some of your variable names need improvement.")
     }
   }
 
@@ -179,6 +267,33 @@ object Verifier {
       if (subroutine.exceptionTypes.contains(exceptionType)) {
         throw SpecViolation("I expected ${specification.signature} in ${clazz.normalizeName} to not throw ${exceptionType.normalizeName} but it does.")
       }
+    }
+  }
+
+  private fun verifyVersion(project: ProjectSpecification) {
+    try {
+      val url = URL(String.format("https://twodee.org/teaching/vspec.php?course=%s&semester=%s&homework=%s", project.course, project.semester, project.tag))
+      val connection = url.openConnection()
+      val inputStream = connection.getInputStream()
+      val scanner = Scanner(inputStream)
+
+      var expectedVersion = project.version
+      if (scanner.hasNext()) {
+        expectedVersion = scanner.nextInt()
+      } else {
+        System.err.println("Homework was not registered with the server. Unable to validate SpecChecker version.")
+      }
+
+      scanner.close()
+
+      if (expectedVersion != project.version) {
+        Assert.fail("You are running a SpecChecker that is out of date. Please pull down the latest version from the template remote.")
+      }
+
+    } catch (e: UnknownHostException) {
+      System.err.println("Host www.twodee.org was inaccessible. Unable to validate SpecChecker version.")
+    } catch (e: Exception) {
+      e.printStackTrace()
     }
   }
 }

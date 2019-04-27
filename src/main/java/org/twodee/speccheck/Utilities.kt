@@ -2,7 +2,29 @@ package org.twodee.speccheck
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import java.awt.Dialog
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import java.awt.Insets
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 import java.lang.reflect.Modifier
+import java.util.ArrayList
+import java.util.concurrent.locks.ReentrantLock
+import javax.swing.*
+import kotlin.concurrent.withLock
+import javax.swing.JOptionPane
+import com.sun.java.accessibility.util.AWTEventMonitor.addWindowListener
+import java.beans.PropertyChangeEvent
+import java.beans.PropertyChangeListener
+import java.awt.Dialog.ModalityType
+import javax.swing.JDialog
+import javax.swing.JScrollPane
+import javax.swing.JList
+import java.awt.BorderLayout
+import java.io.File
+import javax.swing.JPanel
+
 
 object Utilities {
   val gson: Gson
@@ -46,50 +68,73 @@ object Utilities {
     return msg
   }
 
-  fun stringToClass(name: String) =
-    try {
-      when (name) {
-        "char" -> Char::class.java
+  fun stringToClass(name: String) = try {
+    when (name) {
+      "char" -> Char::class.java
 
-        "boolean" -> Boolean::class.java
+      "boolean" -> Boolean::class.java
 
-        "float" -> Float::class.java
-        "double" -> Double::class.java
+      "float" -> Float::class.java
+      "double" -> Double::class.java
 
-        "byte" -> Byte::class.java
-        "short" -> Short::class.java
-        "int" -> Int::class.java
-        "long" -> Long::class.java
+      "byte" -> Byte::class.java
+      "short" -> Short::class.java
+      "int" -> Int::class.java
+      "long" -> Long::class.java
 
-        "void" -> Void.TYPE
+      "void" -> Void.TYPE
 
-        else -> Class.forName(name)
-      }
-    } catch (e: ClassNotFoundException) {
-      throw SpecViolation("I couldn't find a class by the name of \"${name}\". Check CamelCase, spelling, and that you created your class in the right package.")
+      else -> Class.forName(name)
     }
+  } catch (e: ClassNotFoundException) {
+    throw SpecViolation("I couldn't find a class by the name of \"${name}\". Check CamelCase, spelling, and that you created your class in the right package.")
+  }
+
+  fun wrap(s: String, nChars: Int): String {
+    val wrapPattern = "(.{1,$nChars})( +|\n|\\Z)"
+    val sWithBreaks = s.replace(wrapPattern.toRegex(), String.format("$1%n"))
+    return sWithBreaks.substring(0, sWithBreaks.length - 1)
+  }
+
+  fun slurp(path: String): String {
+    return File(path).readText()
+  }
 }
 
 val Class<*>.specifiedFields
-  get() = declaredFields.filter { it.isAnnotationPresent(SpecifiedField::class.java) }
+  get() = declaredFields.filter {
+    it.isAnnotationPresent(SpecifiedField::class.java)
+  }
 
 val Class<*>.specifiedMethods
-  get() = declaredMethods.filter { it.isAnnotationPresent(SpecifiedMethod::class.java) }
+  get() = declaredMethods.filter {
+    it.isAnnotationPresent(SpecifiedMethod::class.java)
+  }
 
 val Class<*>.specifiedConstructors
-  get() = declaredConstructors.filter { it.isAnnotationPresent(SpecifiedConstructor::class.java) }
+  get() = declaredConstructors.filter {
+    it.isAnnotationPresent(SpecifiedConstructor::class.java)
+  }
 
 val Class<*>.publicFields
-  get() = declaredFields.filter { Modifier.isPublic(it.modifiers) }
+  get() = declaredFields.filter {
+    Modifier.isPublic(it.modifiers)
+  }
 
 val Class<*>.publicMethods
-  get() = declaredMethods.filter { Modifier.isPublic(it.modifiers) }
+  get() = declaredMethods.filter {
+    Modifier.isPublic(it.modifiers)
+  }
 
 val Class<*>.publicConstructors
-  get() = declaredConstructors.filter { Modifier.isPublic(it.modifiers) }
+  get() = declaredConstructors.filter {
+    Modifier.isPublic(it.modifiers)
+  }
 
 val Class<*>.instanceVariableCount
-  get() = fields.count { !Modifier.isStatic(it.modifiers) }
+  get() = fields.count {
+    !Modifier.isStatic(it.modifiers)
+  }
 
 val Class<*>.normalizeName
   get() = canonicalName.removePrefix("java.lang.")

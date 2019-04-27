@@ -7,6 +7,7 @@ import kotlin.reflect.KClass
 
 class ProjectSpecification(val tag: String, val semester: String, val course: String, val version: Int) {
   var classes = listOf<ClassSpecification>()
+  var hasChecklist = true
 }
 
 class ClassSpecification(val name: String) {
