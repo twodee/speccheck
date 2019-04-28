@@ -15,13 +15,13 @@ object Assert {
 
   fun assertEquals(message: String, expected: Double, actual: Double, epsilon: Double) {
     if (Math.abs(actual - expected) > epsilon) {
-      throw SpecViolation(String.format("$message\n  Expected: %.6f\n    Actual: %.6f", message, expected, actual))
+      throw SpecViolation(String.format("$message\n  Expected: %.6f\n    Actual: %.6f", expected, actual))
     }
   }
 
   fun assertEquals(message: String, expected: Any, actual: Any) {
     if (expected != actual) {
-      throw SpecViolation(String.format("$message\n  Expected: $expected\n    Actual: $actual", message, expected, actual))
+      throw SpecViolation(String.format("$message\n  Expected: $expected\n    Actual: $actual", expected, actual))
     }
   }
 
