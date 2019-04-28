@@ -68,7 +68,7 @@ object Utilities {
     return msg
   }
 
-  fun stringToClass(name: String) = try {
+  fun stringToClass(name: String): Class<*> = try {
     when (name) {
       "char" -> Char::class.java
 
@@ -87,7 +87,7 @@ object Utilities {
       else -> Class.forName(name)
     }
   } catch (e: ClassNotFoundException) {
-    throw SpecViolation("I couldn't find a class by the name of \"${name}\". Check CamelCase, spelling, and that you created your class in the right package.")
+    throw SpecViolation("I couldn't find a class by the name of \"$name\". Check CamelCase, spelling, and that you created your class in the right package.")
   }
 
   fun wrap(s: String, nChars: Int): String {
@@ -139,68 +139,3 @@ val Class<*>.instanceVariableCount
 val Class<*>.normalizeName
   get() = canonicalName.removePrefix("java.lang.")
 
-val dummy = """
-[
-  {
-    "maxInstanceVariables": 3,
-    "modifiers": 1,
-    "superclass": "java.util.ArrayList",
-    "unitTesters": [
-      "org.twodee.speccheck.test.WorksTest"
-    ],
-    "allowUnspecified": false,
-    "allowUnspecifiedDefaultCtor": false,
-    "allowUnspecifiedConstants": false,
-    "interfaces": [
-      "java.awt.event.ActionListener"
-    ],
-    "constructors": [
-      {
-        "name": "Works",
-        "modifiers": 1,
-        "parameters": [
-          "java.lang.String",
-          "int",
-          "double"
-        ],
-        "mustExceptions": [],
-        "mustNotExceptions": []
-      }
-    ],
-    "methods": [
-      {
-        "returnType": "void",
-        "name": "actionPerformed",
-        "modifiers": 1,
-        "parameters": [
-          "java.awt.event.ActionEvent"
-        ],
-        "mustExceptions": [],
-        "mustNotExceptions": []
-      },
-      {
-        "returnType": "int",
-        "name": "foo",
-        "modifiers": 1,
-        "parameters": [
-          "int"
-        ],
-        "mustExceptions": [
-          "java.io.IOException"
-        ],
-        "mustNotExceptions": [
-          "java.io.FileNotFoundException"
-        ]
-      }
-    ],
-    "fields": [
-      {
-        "name": "a",
-        "type": "int",
-        "modifiers": 1
-      }
-    ],
-    "name": "org.twodee.speccheck.test.Works"
-  }
-]
-"""

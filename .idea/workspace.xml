@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="69d1f602-9e41-468b-9854-46ad2c915da6" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Assert.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Assert.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Utilities.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Utilities.kt" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/.gradle/" />
     <ignored path="$PROJECT_DIR$/build/" />
@@ -64,47 +65,11 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Specifications.kt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="195">
-              <caret line="16" column="6" selection-start-line="16" selection-start-column="6" selection-end-line="16" selection-end-column="6" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Annotations.kt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="195">
-              <caret line="13" column="43" selection-start-line="13" selection-start-column="43" selection-end-line="13" selection-end-column="43" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Utilities.kt">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1185">
-              <caret line="102" selection-start-line="102" selection-end-line="102" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Verifier.kt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="480">
-              <caret line="283" column="70" selection-start-line="283" selection-start-column="70" selection-end-line="283" selection-end-column="70" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Assert.kt">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="225">
-              <caret line="19" column="21" selection-start-line="19" selection-start-column="21" selection-end-line="19" selection-end-column="21" />
+            <state relative-caret-position="991">
+              <caret line="91" lean-forward="true" selection-start-line="91" selection-end-line="91" />
             </state>
           </provider>
         </entry>
@@ -131,12 +96,12 @@
         <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/test/Works.java" />
         <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Generator.kt" />
         <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/test/WorksTest.java" />
-        <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Utilities.kt" />
         <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/DialogUtilities.kt" />
         <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Verifier.kt" />
         <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Specifications.kt" />
-        <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Annotations.kt" />
         <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Assert.kt" />
+        <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Annotations.kt" />
+        <option value="$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Utilities.kt" />
       </list>
     </option>
   </component>
@@ -453,10 +418,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Utilities.kt">
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Assert.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1185">
-          <caret line="102" selection-start-line="102" selection-end-line="102" />
+        <state relative-caret-position="195">
+          <caret line="17" selection-start-line="17" selection-end-line="17" />
         </state>
       </provider>
     </entry>
@@ -467,13 +432,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Specifications.kt">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="195">
-          <caret line="16" column="6" selection-start-line="16" selection-start-column="6" selection-end-line="16" selection-end-column="6" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Annotations.kt">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="195">
@@ -481,10 +439,17 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Assert.kt">
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Specifications.kt">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="225">
-          <caret line="19" column="21" selection-start-line="19" selection-start-column="21" selection-end-line="19" selection-end-column="21" />
+        <state relative-caret-position="195">
+          <caret line="16" column="6" selection-start-line="16" selection-start-column="6" selection-end-line="16" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/org/twodee/speccheck/Utilities.kt">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="991">
+          <caret line="91" lean-forward="true" selection-start-line="91" selection-end-line="91" />
         </state>
       </provider>
     </entry>
