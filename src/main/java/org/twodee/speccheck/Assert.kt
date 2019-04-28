@@ -25,8 +25,14 @@ object Assert {
     }
   }
 
-  fun assertNonMatch(message: String, pattern: Pattern, text: String) {
+  fun assertNotMatches(message: String, pattern: Pattern, text: String) {
     if (pattern.matcher(text).find()) {
+      throw SpecViolation(message)
+    }
+  }
+
+  fun assertMatches(message: String, pattern: Regex, text: String) {
+    if (!pattern.matches(text)) {
       throw SpecViolation(message)
     }
   }
