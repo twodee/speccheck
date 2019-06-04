@@ -25,8 +25,12 @@ object Verifier {
   }
 
   fun verify(json: String) {
-    val project = Utilities.gson.fromJson(json, ProjectSpecification::class.java)
-    verifyProject(project)
+    try {
+      val project = Utilities.gson.fromJson(json, ProjectSpecification::class.java)
+      verifyProject(project)
+    } catch (e: SpecViolation) {
+      System.err.println(e.message)
+    }
   }
 
   private fun verifyProject(project: ProjectSpecification) {
