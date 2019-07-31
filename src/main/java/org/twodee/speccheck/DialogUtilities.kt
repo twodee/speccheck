@@ -146,7 +146,7 @@ object DialogUtilities {
     t!!.start()
     while (t != null) {
       try {
-        t!!.join()
+        t.join()
         t = null
       } catch (e: InterruptedException) {
       }

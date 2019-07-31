@@ -23,6 +23,7 @@ import javax.swing.JScrollPane
 import javax.swing.JList
 import java.awt.BorderLayout
 import java.io.File
+import java.lang.reflect.Method
 import javax.swing.JPanel
 
 
@@ -139,3 +140,5 @@ val Class<*>.instanceVariableCount
 val Class<*>.normalizeName
   get() = canonicalName.removePrefix("java.lang.")
 
+val Method.isMain
+  get() = name == "main" && Modifier.isStatic(modifiers) && parameterCount == 1 && parameterTypes[0] == Array<String>::class.java

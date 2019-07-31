@@ -1,8 +1,10 @@
 package org.twodee.speccheck
 
 import java.io.File
+import java.lang.NullPointerException
 import java.lang.reflect.Executable
 import java.lang.reflect.InvocationTargetException
+import java.lang.reflect.Parameter
 import java.net.URL
 import java.net.UnknownHostException
 import java.util.*
@@ -100,7 +102,7 @@ object Verifier {
 
       // Assert no extraneous public methods.
       clazz.publicMethods.find { method ->
-        !classSpecification.hasMethod(method)
+        !classSpecification.hasMethod(method) && !method.isMain
       }?.let { method ->
         throw SpecViolation("I found an unspecified public method ${method.name}(${method.parameterTypes.map { it.normalizeName }.joinToString(", ")}) in class ${clazz.normalizeName}. Any methods you add should be private (or protected).")
       }
@@ -115,7 +117,14 @@ object Verifier {
         try {
           method.invoke(instance)
         } catch (e: InvocationTargetException) {
-          throw e.targetException
+          try {
+            throw e.targetException
+          } catch (e: NullPointerException) {
+            val stackTrace = e.stackTrace.take(5).joinToString("\n") {
+              "  Class ${it.className}, method ${it.methodName} (${it.fileName}:${it.lineNumber})"
+            }
+            throw SpecViolation("I hit a NullPointerException when trying to test your code. Here is a snapshot of the stack trace showing the lines that led up to the trouble:\n$stackTrace")
+          }
         }
       }
     }
