@@ -5,6 +5,11 @@ import java.net.URL
 import java.net.UnknownHostException
 import java.util.*
 import java.util.regex.Pattern
+import javax.swing.ImageIcon
+import javax.swing.JLabel
+import java.awt.image.BufferedImage
+import kotlin.math.abs
+
 
 object Assert {
   fun assertEquals(message: String, expected: Int, actual: Int) {
@@ -171,5 +176,38 @@ $message
     }
   }
 
+  fun assertIndependent(message: String, noun: String, a: Any, b: Any) {
+    if (a === b) {
+      throw SpecViolation("$message But the $noun I got back is not independent of the source $noun. You need to make a brand new $noun.")
+    }
+  }
 
+  private fun equalColors(expected: Int, actual: Int, tolerance: Int): Boolean {
+    val expectedColor = Color(expected, true)
+    val actualColor = Color(actual, true)
+    return abs(expectedColor.red - actualColor.red) <= tolerance && abs(expectedColor.green - actualColor.green) <= tolerance && abs(expectedColor.blue - actualColor.blue) <= tolerance && abs(expectedColor.alpha - actualColor.alpha) <= tolerance
+  }
+
+  fun assertEquals(isVisual: Boolean, message: String, expected: BufferedImage, actual: BufferedImage, tolerance: Int) {
+    assertEquals("$message But it produced an image whose width was different than expected.", expected.width, actual.width)
+    assertEquals("$message But it produced an image whose height was different than expected.", expected.height, actual.height)
+
+    // Images that have been written and read using ImageIO.write/read may not
+    // have the same type that they were created with, so checking for types
+    // is not so fun.
+    /* assertEquals("Method " + method + " produced an image whose type was different than expected.", expected.getType(), actual.getType()); */
+
+    for (r in 0 until expected.height) {
+      for (c in 0 until expected.width) {
+        if (!equalColors(expected.getRGB(c, r), actual.getRGB(c, r), tolerance)) {
+          val msg = "$message But it produced an image whose pixel ($c, $r) was not the expected color."
+          if (isVisual) {
+            val comparer = CompareFrame<JLabel>(false)
+            comparer.compare(msg, JLabel(ImageIcon(expected)), JLabel(ImageIcon(actual)))
+          }
+          assertEquals(msg, Color(expected.getRGB(c, r), true), Color(actual.getRGB(c, r), true))
+        }
+      }
+    }
+  }
 }
