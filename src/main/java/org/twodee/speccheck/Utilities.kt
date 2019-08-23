@@ -23,7 +23,9 @@ import javax.swing.JScrollPane
 import javax.swing.JList
 import java.awt.BorderLayout
 import java.io.File
+import java.io.InputStream
 import java.lang.reflect.Method
+import java.nio.charset.Charset
 import javax.swing.JPanel
 
 
@@ -99,6 +101,10 @@ object Utilities {
 
   fun slurp(path: String): String {
     return File(path).readText()
+  }
+
+  fun slurp(stream: InputStream): String {
+    return stream.bufferedReader().use { it.readText() }
   }
 }
 
