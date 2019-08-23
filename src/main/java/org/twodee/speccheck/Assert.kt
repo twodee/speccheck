@@ -9,6 +9,7 @@ import javax.swing.ImageIcon
 import javax.swing.JLabel
 import java.awt.image.BufferedImage
 import kotlin.math.abs
+import kotlin.math.min
 
 
 object Assert {
@@ -24,7 +25,7 @@ object Assert {
     }
   }
 
-  fun assertEquals(message: String, expected: Any, actual: Any) {
+  fun assertEquals(message: String, expected: Any?, actual: Any?) {
     if (expected != actual) {
       throw SpecViolation(String.format("$message\n  Expected: $expected\n    Actual: $actual", expected, actual))
     }
@@ -116,14 +117,28 @@ $message
   }
 
   fun <T> assertArrayEquals(message: String, expected: Array<T>, actual: Array<T>) {
-    if (expected.size != actual.size) {
-      throw SpecViolation("$message But the array had a different length than I expected.\n  Expected: ${expected.size}\n    Actual: ${actual.size}")
-    }
-
-    for (i in expected.indices) {
+    // Compare same-sized chunks first.
+    repeat (min(expected.size, actual.size)) { i ->
       if (expected[i] != actual[i]) {
         throw SpecViolation("$message But element $i wasn't what I expected.\n  Expected: ${expected[i]}\n    Actual: ${actual[i]}")
       }
+    }
+
+    if (expected.size != actual.size) {
+      throw SpecViolation("$message But the array had a different length than I expected.\n  Expected: ${expected.size}\n    Actual: ${actual.size}")
+    }
+  }
+
+  fun <T> assertEquals(message: String, expected: ArrayList<T>, actual: ArrayList<T>) {
+    // Compare same-sized chunks first.
+    repeat (min(expected.size, actual.size)) { i ->
+      if (expected[i] != actual[i]) {
+        throw SpecViolation("$message But element $i wasn't what I expected.\n  Expected: ${expected[i]}\n    Actual: ${actual[i]}")
+      }
+    }
+
+    if (expected.size != actual.size) {
+      throw SpecViolation("$message But the list had a different length than I expected.\n  Expected: ${expected.size}\n    Actual: ${actual.size}")
     }
   }
 
