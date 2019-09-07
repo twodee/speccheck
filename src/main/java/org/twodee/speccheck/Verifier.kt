@@ -15,7 +15,6 @@ object Verifier {
   @JvmStatic fun main(args: Array<String>) {
     val tag = args[0]
     verify(File(args[1]).readText())
-    //    DialogUtilities.isListOkay("FOO", "hi", arrayOf("a", "b", "c", "d"))
   }
 
   fun verify(file: File) {
@@ -40,6 +39,8 @@ object Verifier {
     verifyClasses(project.classes)
     verifyIdentifiers(project.classes.map { "src/${it.name.replace('.', '/')}.java" })
     verifyChecklist(project)
+
+    println("High five! You've passed all the tests.")
   }
 
   private fun verifyClasses(clazzes: List<ClassSpecification>) {
@@ -167,11 +168,11 @@ object Verifier {
   }
 
   private fun verifyChecklist(project: ProjectSpecification) {
-    if (project.hasChecklist) {
+    if (!project.hasChecklist) {
       return
     }
 
-    val messages = arrayOf("I have eliminated all compilation errors from my code. In the Package Explorer, there are no red icons on any of my files and no red exclamation point on my project.", "I have committed my work to my local repository. In the Package Explorer, there are no files with greater-than signs (>) preceding their names.", "I have pushed my work to GitLab. In the Package Explorer, there are no up or down arrows followed by numbers after my project name.", "I have verified that my work is in my remote repository at http://gitlab.com.")
+    val messages = arrayOf("I have eliminated all compilation errors from my code. There is no red in any of my code!", "I have committed my work to my local Git repository.", "I have pushed my work to my remote repository on GitLab.", "I have verified that my most recent work is in my remote repository at https://gitlab.com.")
     if (!DialogUtilities.isAllChecked("Final Steps", *messages)) {
       Assert.fail("Not all items on your final steps checklist have been completed.")
     }

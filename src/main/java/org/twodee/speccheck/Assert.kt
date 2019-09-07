@@ -173,6 +173,12 @@ $message
     }
   }
 
+  fun assertNull(message: String, obj: Any?) {
+    if (obj != null) {
+      throw SpecViolation(message)
+    }
+  }
+
   fun assertNotNull(message: String, obj: Any?) {
     if (obj == null) {
       throw SpecViolation(message)
