@@ -10,6 +10,7 @@ import java.net.UnknownHostException
 import java.util.*
 import java.util.regex.Pattern
 import kotlin.collections.HashSet
+import kotlin.system.exitProcess
 
 object Verifier {
   @JvmStatic fun main(args: Array<String>) {
@@ -31,14 +32,18 @@ object Verifier {
       verifyProject(project)
     } catch (e: SpecViolation) {
       System.err.println(e.message)
+      exitProcess(1)
     }
   }
 
   private fun verifyProject(project: ProjectSpecification) {
     verifyVersion(project)
     verifyClasses(project.classes)
-    verifyIdentifiers(project.classes.map { "src/${it.name.replace('.', '/')}.java" })
-    verifyChecklist(project)
+
+    if (System.getProperty("grader") != "true") {
+      verifyIdentifiers(project.classes.map { "src/${it.name.replace('.', '/')}.java" })
+      verifyChecklist(project)
+    }
 
     println("High five! You've passed all the tests.")
   }
@@ -303,11 +308,8 @@ object Verifier {
       if (expectedVersion != project.version) {
         Assert.fail("You are running a SpecChecker that is out of date. Please pull down the latest version from the template remote.")
       }
-
     } catch (e: UnknownHostException) {
       System.err.println("Host www.twodee.org was inaccessible. Unable to validate SpecChecker version.")
-    } catch (e: Exception) {
-      e.printStackTrace()
     }
   }
 }

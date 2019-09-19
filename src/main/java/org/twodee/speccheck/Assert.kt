@@ -11,7 +11,6 @@ import java.awt.image.BufferedImage
 import kotlin.math.abs
 import kotlin.math.min
 
-
 object Assert {
   fun assertEquals(message: String, expected: Int, actual: Int) {
     if (expected != actual) {
