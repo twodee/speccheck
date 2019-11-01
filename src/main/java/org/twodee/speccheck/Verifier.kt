@@ -14,7 +14,6 @@ import kotlin.system.exitProcess
 
 object Verifier {
   @JvmStatic fun main(args: Array<String>) {
-    val tag = args[0]
     verify(File(args[1]).readText())
   }
 

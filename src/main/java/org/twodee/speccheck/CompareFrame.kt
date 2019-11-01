@@ -22,7 +22,7 @@ class CompareFrame<E : JComponent> @JvmOverloads constructor(isManual: Boolean =
 
     constraints.gridx = 0
     constraints.gridy = 0
-    constraints.fill = GridBagConstraints.BOTH
+    constraints.fill = GridBagConstraints.HORIZONTAL
     constraints.gridwidth = GridBagConstraints.REMAINDER
     constraints.insets = Insets(10, 10, 10, 10)
 
@@ -103,6 +103,7 @@ class CompareFrame<E : JComponent> @JvmOverloads constructor(isManual: Boolean =
     label.text = msg
     ourScroller.setViewportView(ours)
     theirScroller.setViewportView(theirs)
+    pack()
     pack()
 
     sameButton.requestFocusInWindow()

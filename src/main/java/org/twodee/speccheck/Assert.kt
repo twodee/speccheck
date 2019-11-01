@@ -12,6 +12,12 @@ import kotlin.math.abs
 import kotlin.math.min
 
 object Assert {
+  fun assertTrue(message: String, predicate: Boolean) {
+    if (!predicate) {
+      throw SpecViolation("$message")
+    }
+  }
+
   fun assertEquals(message: String, expected: Int, actual: Int) {
     if (expected != actual) {
       throw SpecViolation("$message\n  Expected: ${expected}\n    Actual: ${actual}")
@@ -124,7 +130,7 @@ $message
     }
 
     if (expected.size != actual.size) {
-      throw SpecViolation("$message But the array had a different length than I expected.\n  Expected: ${expected.size}\n    Actual: ${actual.size}")
+      throw SpecViolation("$message But the array had a different length than I expected.\n  Expected: ${expected.size} ${expected.contentToString()}\n    Actual: ${actual.size} ${actual.contentToString()}")
     }
   }
 
@@ -137,7 +143,7 @@ $message
     }
 
     if (expected.size != actual.size) {
-      throw SpecViolation("$message But the list had a different length than I expected.\n  Expected: ${expected.size}\n    Actual: ${actual.size}")
+      throw SpecViolation("$message But the list had a different length than I expected.\n  Expected: ${expected.size} ${expected}\n    Actual: ${actual.size} ${actual}")
     }
   }
 
