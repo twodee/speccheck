@@ -117,7 +117,7 @@ object Verifier {
     classSpecification.unitTesters.forEach { testerName ->
       val testerClazz = Utilities.stringToClass(testerName)
       val instance = testerClazz.getConstructor().newInstance()
-      val methods = testerClazz.declaredMethods.filter { it.isAnnotationPresent(Test::class.java) }
+      val methods = testerClazz.declaredMethods.filter { it.isAnnotationPresent(Test::class.java) }.sortedBy { it.getAnnotation(Test::class.java).order }
       methods.forEach { method ->
         try {
           method.invoke(instance)
