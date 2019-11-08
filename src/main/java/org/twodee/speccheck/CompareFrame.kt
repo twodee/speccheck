@@ -7,6 +7,8 @@ import javax.swing.*
 
 class CompareFrame<E : JComponent> @JvmOverloads constructor(isManual: Boolean = true) : JDialog() {
 
+  private val panel: JPanel
+  private val wholeScroller: JScrollPane
   private val label: JTextArea
   private val ourScroller: JScrollPane
   private val theirScroller: JScrollPane
@@ -15,7 +17,9 @@ class CompareFrame<E : JComponent> @JvmOverloads constructor(isManual: Boolean =
   private var sameButton: JButton
 
   init {
-    layout = GridBagLayout()
+    panel = JPanel(GridBagLayout())
+    wholeScroller = JScrollPane(panel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER)
+
     isModal = true
 
     val constraints = GridBagConstraints()
@@ -32,7 +36,7 @@ class CompareFrame<E : JComponent> @JvmOverloads constructor(isManual: Boolean =
     label.isEditable = false
     label.background = Color(255, 255, 255, 0)
 
-    add(label, constraints)
+    panel.add(label, constraints)
 
     constraints.insets = Insets(0, 0, 0, 0)
 
@@ -42,9 +46,9 @@ class CompareFrame<E : JComponent> @JvmOverloads constructor(isManual: Boolean =
     constraints.fill = GridBagConstraints.NONE
     constraints.anchor = GridBagConstraints.CENTER
     val expectedLabel = JLabel("Expected")
-    add(expectedLabel, constraints)
+    panel.add(expectedLabel, constraints)
     ++constraints.gridx
-    add(JLabel("Actual"), constraints)
+    panel.add(JLabel("Actual"), constraints)
 
     constraints.gridx = 0
     constraints.gridwidth = 2
@@ -58,7 +62,7 @@ class CompareFrame<E : JComponent> @JvmOverloads constructor(isManual: Boolean =
 
     val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT, ourScroller, theirScroller)
     splitPane.resizeWeight = 0.5
-    add(splitPane, constraints)
+    panel.add(splitPane, constraints)
 
     ++constraints.gridy
     if (isManual) {
@@ -74,12 +78,12 @@ class CompareFrame<E : JComponent> @JvmOverloads constructor(isManual: Boolean =
         }
       }
       button.addActionListener(PassFailListener(false))
-      add(button, constraints)
+      panel.add(button, constraints)
 
       constraints.gridx = 1
       sameButton = JButton("Same")
       sameButton.addActionListener(PassFailListener(true))
-      add(sameButton, constraints)
+      panel.add(sameButton, constraints)
     } else {
       constraints.weighty = 0.0
       constraints.gridx = 0
@@ -92,9 +96,10 @@ class CompareFrame<E : JComponent> @JvmOverloads constructor(isManual: Boolean =
         }
       }
       sameButton.addActionListener(OkayListener())
-      add(sameButton, constraints)
+      panel.add(sameButton, constraints)
     }
 
+    add(wholeScroller)
     minimumSize = Dimension(500, 0)
     defaultCloseOperation = JFrame.DO_NOTHING_ON_CLOSE
   }
