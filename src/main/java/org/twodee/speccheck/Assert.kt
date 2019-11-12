@@ -227,7 +227,7 @@ $message
       for (c in 0 until expected.width) {
         if (!equalColors(expected.getRGB(c, r), actual.getRGB(c, r), tolerance)) {
           val msg = "$message But it produced an image whose pixel ($c, $r) was not the expected color."
-          if (isVisual) {
+          if (isVisual && !isGrader) {
             val comparer = CompareFrame<JLabel>(false)
             comparer.compare(msg, JLabel(ImageIcon(expected)), JLabel(ImageIcon(actual)))
           }
@@ -236,4 +236,7 @@ $message
       }
     }
   }
+
+  private val isGrader: Boolean
+    get() = System.getProperty("grader") == "true"
 }
