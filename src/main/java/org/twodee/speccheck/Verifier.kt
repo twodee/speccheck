@@ -1,10 +1,8 @@
 package org.twodee.speccheck
 
 import java.io.File
-import java.lang.NullPointerException
 import java.lang.reflect.Executable
 import java.lang.reflect.InvocationTargetException
-import java.lang.reflect.Parameter
 import java.net.URL
 import java.net.UnknownHostException
 import java.util.*
