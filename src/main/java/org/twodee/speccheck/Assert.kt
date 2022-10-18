@@ -36,9 +36,9 @@ object Assert {
     throw SpecViolation(message)
   }
 
-  fun assertSame(expected: Int, actual: Int, message: String, vararg fields: Any) {
+  fun assertSame(expected: Any, actual: Any, message: String, vararg fields: Any) {
     if (expected !== actual) {
-      throw SpecViolation(String.format("$message\n  Expected: %d\n    Actual: %d", *fields, expected, actual))
+      throw SpecViolation(String.format("$message\n", *fields))
     }
   }
 
