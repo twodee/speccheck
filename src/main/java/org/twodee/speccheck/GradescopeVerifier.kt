@@ -3,53 +3,73 @@ package org.twodee.speccheck
 import java.io.File
 import java.lang.reflect.Executable
 import java.lang.reflect.InvocationTargetException
-import java.net.URL
-import java.net.UnknownHostException
 import java.util.*
 import java.util.regex.Pattern
-import kotlin.collections.HashSet
 import kotlin.system.exitProcess
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import java.io.PrintStream
+import java.io.PrintWriter
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
-object Verifier {
-  @JvmStatic fun main(args: Array<String>) {
-    verify(File(args[1]).readText())
+object GradescopeVerifier {
+  fun verify(inFile: File, outFile: File) {
+    verify(inFile.readText(), outFile)
   }
 
-  fun verify(file: File) {
-    try {
-      verify(file.readText())
-    } catch (e: SpecViolation) {
-      System.err.println(e.message)
-    }
-  }
-
-  fun verify(json: String) {
+  fun verify(json: String, outFile: File) {
+    val report = GradescopeReport()
     try {
       val project = Utilities.gson.fromJson(json, ProjectSpecification::class.java)
-      verifyProject(project)
+      verifyProject(report, project)
     } catch (e: SpecViolation) {
-      System.err.println(e.message)
-      exitProcess(1)
+      val testResult = TestResult("Interface Tests")
+      testResult.score = 0
+      testResult.output = e.message ?: "exception had no message"
+      report.tests.add(testResult)
+    }
+    val gsonner = GsonBuilder().setPrettyPrinting().create()
+    val sum = report.tests.sumOf { it.score }
+    System.err.printf("TOTAL: %d%n", sum)
+    val reportJson = gsonner.toJson(report)
+
+    val out = PrintWriter(outFile)
+    out.println(reportJson)
+    out.close()
+  }
+
+  private fun verifyProject(report: GradescopeReport, project: ProjectSpecification) {
+    verifyClasses(report, project.tag, project.classes)
+
+    if (project.isStyleChecked) {
+      verifyStyle(report, project.classes)
     }
   }
 
-  private fun verifyProject(project: ProjectSpecification) {
-//    verifyVersion(project)
-    verifyClasses(project.tag, project.classes)
-
-//    if (System.getProperty("grader") != "true") {
-//      verifyIdentifiers(project.classes.map { "src/${it.name.replace('.', '/')}.java" })
-//      verifyChecklist(project)
-//    }
-
-    println("High five! You've passed all the tests.")
+  private fun verifyStyle(report: GradescopeReport, clazzes: List<ClassSpecification>) {
+    clazzes.forEach { classSpecification ->
+      val sourcePath = "src/${classSpecification.name.replace('.', '/')}.java"
+      val builder = ProcessBuilder().command("java", "-jar", "source/checkstyle.jar", "-c", "source/checkstyle.xml", sourcePath)
+      val process = builder.start()
+      val exitCode = process.waitFor()
+      val output = String(process.inputStream.readAllBytes())
+      if (exitCode != 0) {
+        val testResult = TestResult("CheckStyle")
+        testResult.score = -5
+        testResult.status = "failed"
+        testResult.output = String.format("I tried running CheckStyle on the source for ${classSpecification.name}, but it failed with this output:%n%n$output")
+        report.tests.add(testResult)
+        return
+      }
+    }
   }
 
-  private fun verifyClasses(tag: String, clazzes: List<ClassSpecification>) {
-    clazzes.forEach { c -> verifyClass(tag, c) }
+  private fun verifyClasses(report: GradescopeReport, tag: String, clazzes: List<ClassSpecification>) {
+    clazzes.forEach { c -> verifyClass(report, tag, c) }
   }
 
-  private fun verifyClass(tag: String, classSpecification: ClassSpecification) {
+  private fun verifyClass(report: GradescopeReport, tag: String, classSpecification: ClassSpecification) {
     // Assert existence.
     val clazz = Utilities.stringToClass(classSpecification.name)
 
@@ -117,22 +137,43 @@ object Verifier {
       val instance = testerClazz.getConstructor().newInstance()
       val methods = testerClazz.methods.filter { it.isAnnotationPresent(Test::class.java) }.sortedBy { it.getAnnotation(Test::class.java).order }
       methods.forEach { method ->
+        val testResult = TestResult("${classSpecification.name}: ${method.name}")
         try {
           method.invoke(instance)
+          testResult.score = method.getAnnotation(Test::class.java).points
+          testResult.status = "passed"
         } catch (e: InvocationTargetException) {
-          try {
-            throw e.targetException
-          } catch (e: NullPointerException) {
-            val stackTrace = e.stackTrace.take(5).joinToString("\n") {
+          testResult.score = 0
+          if (e.targetException is SpecViolation) {
+            testResult.output = e.targetException.message!!
+          } else {
+            testResult.output = "I hit an exception of type ${e.targetException.javaClass.simpleName} while running your code."
+            if (e.targetException.message != null) {
+              testResult.output += " This was it's message: \"${e.targetException.message}\"."
+            }
+            val stackTrace = e.targetException.stackTrace.joinToString("\n") {
               "  Class ${it.className}, method ${it.methodName} (${it.fileName}:${it.lineNumber})"
             }
-            throw SpecViolation("I hit a NullPointerException when trying to test your code. Here is a snapshot of the stack trace showing the lines that led up to the trouble:\n$stackTrace")
+            testResult.output += " And this is it's stack trace:${System.lineSeparator()}${System.lineSeparator()}${stackTrace}"
           }
+        } catch (e: NullPointerException) {
+          val stackTrace = e.stackTrace.joinToString("\n") {
+            "  Class ${it.className}, method ${it.methodName} (${it.fileName}:${it.lineNumber})"
+          }
+          testResult.output = "I hit a NullPointerException when trying to test your code. Here is the stack trace showing the lines that led up to the trouble:\n$stackTrace"
         }
+        report.tests.add(testResult)
       }
     }
 
-    verifyClassSource(tag, classSpecification)
+    try {
+      verifyClassSource(tag, classSpecification)
+    } catch (e: SpecViolation) {
+      val testResult = TestResult("${classSpecification.name} -> Source Checks")
+      testResult.score = -2
+      testResult.output = e.message ?: "uh oh"
+      report.tests.add(testResult)
+    }
   }
 
   private fun verifyClassSource(tag: String, classSpecification: ClassSpecification) {
@@ -162,55 +203,11 @@ object Verifier {
       Assert.fail("Class ${classSpecification.name} contains a linefeed character (\\n). Linefeeds are not valid on all operating systems. Please use a cross-platform way of generating linebreaks, such as println, %n in format strings, or System.lineSeparator().")
     }
 
-    pattern = Pattern.compile("\\\\\\\\")
-    matcher = pattern.matcher(src)
-    if (matcher.find()) {
-      Assert.fail("Class ${classSpecification.name} contains what looks like a Windows-only directory separator (\\, but escaped). Backslash is only valid on Windows and not other operating systems. Please use a cross-platform way of separating directories, such as forward slash (/), the File(parentDirectory, child) constructor, or File.separator.")
-    }
-  }
-
-  private fun verifyChecklist(project: ProjectSpecification) {
-    if (!project.hasChecklist) {
-      return
-    }
-
-    val messages = arrayOf("I have eliminated all compilation errors from my code. There is no red in any of my code!", "I have committed my work to my local Git repository.", "I have pushed my work to my remote repository on GitLab.", "I have verified that my most recent work is in my remote repository at https://gitlab.com.")
-    if (!DialogUtilities.isAllChecked("Final Steps", *messages)) {
-      Assert.fail("Not all items on your final steps checklist have been completed.")
-    }
-  }
-
-  private fun verifyIdentifiers(sourcePaths: List<String>) {
-    val types = HashSet<String>()
-    types.addAll(listOf("var", "double", "char", "boolean", "float", "short", "long", "int", "byte", "Scanner", "String", "Random", "File", "BufferedImage", "Date", "GregorianCalendar", "ArrayList", "Double", "Character", "Integer", "Boolean", "PrintWriter"))
-
-    // Exclude types associated with files.
-    sourcePaths.forEach { sourcePath ->
-      val pattern = Pattern.compile("(\\w+)\\.java$")
-      val matcher = pattern.matcher(sourcePath)
-      if (matcher.find()) {
-        types.add(matcher.group(1))
-      }
-    }
-
-    // TODO
-    //    types.addAll(extraTypes)
-
-    val typePattern = "(?:${types.joinToString("|")})"
-    val pattern = Pattern.compile("\\b$typePattern(?:\\s*\\[\\s*\\])*\\s+(\\w+)\\s*(?:=(?!=)|,|;|\\))", Pattern.MULTILINE)
-
-    val ids = HashSet<String>()
-    sourcePaths.forEach { sourcePath ->
-      val source = Utilities.slurp(sourcePath)
-      val matcher = pattern.matcher(source)
-      while (matcher.find()) {
-        ids.add(matcher.group(1))
-      }
-    }
-
-    if (ids.size > 0 && !DialogUtilities.isListOkay("Identifiers", "Variable names are important. Bad names mislead, confuse, and frustrate. Good names accurately describe the data they hold, are readable and pronounceable, follow camelCaseConventions, and will still make sense in a week's time. Following are some variable names from your code. Are they good names?", ids.toTypedArray())) {
-      Assert.fail("Some of your variable names need improvement.")
-    }
+//    pattern = Pattern.compile("\\\\\\\\")
+//    matcher = pattern.matcher(src)
+//    if (matcher.find()) {
+//      Assert.fail("Class ${classSpecification.name} contains what looks like a Windows-only directory separator (\\, but escaped). Backslash is only valid on Windows and not other operating systems. Please use a cross-platform way of separating directories, such as forward slash (/), the File(parentDirectory, child) constructor, or File.separator.")
+//    }
   }
 
   private fun verifyField(clazz: Class<*>, specification: FieldSpecification) {
@@ -285,28 +282,15 @@ object Verifier {
       }
     }
   }
+}
 
-  private fun verifyVersion(project: ProjectSpecification) {
-    try {
-      val url = URL(String.format("https://twodee.org/teaching/vspec.php?course=%s&semester=%s&homework=%s", project.course, project.semester, project.tag))
-      val connection = url.openConnection()
-      val inputStream = connection.getInputStream()
-      val scanner = Scanner(inputStream)
+class TestResult(val name: String) {
+  var score: Int = 0
+  var status: String = "failed"
+  var output: String = ""
+}
 
-      var expectedVersion = project.version
-      if (scanner.hasNext()) {
-        expectedVersion = scanner.nextInt()
-      } else {
-        System.err.println("Homework was not registered with the server. Unable to validate SpecChecker version.")
-      }
-
-      scanner.close()
-
-      if (expectedVersion != project.version) {
-        Assert.fail("You are running a SpecChecker that is out of date. Please pull down the latest version from the template remote.")
-      }
-    } catch (e: UnknownHostException) {
-      System.err.println("Host www.twodee.org was inaccessible. Unable to validate SpecChecker version.")
-    }
-  }
+class GradescopeReport {
+  var output: String = ""
+  var tests = mutableListOf<TestResult>()
 }

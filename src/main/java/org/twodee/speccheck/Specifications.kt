@@ -3,11 +3,10 @@ package org.twodee.speccheck
 import java.lang.reflect.Constructor
 import java.lang.reflect.Field
 import java.lang.reflect.Method
-import kotlin.reflect.KClass
 
-class ProjectSpecification(val tag: String, val semester: String, val course: String, val version: Int) {
+class ProjectSpecification(val tag: String, val semester: String, val course: String, val version: Int, val isStyleChecked: Boolean) {
   var classes = listOf<ClassSpecification>()
-  var hasChecklist = true
+  var hasChecklist = false
 }
 
 class ClassSpecification(val name: String) {
@@ -44,7 +43,7 @@ open class SubroutineSpecification(
   var mustNotExceptions: List<String> = listOf()
 ) {
   val signature
-    get() = "$name(${parameters.map { Utilities.stringToClass(it).normalizeName }.joinToString(", ")})"
+    get() = "$name(${parameters.joinToString(", ") { Utilities.stringToClass(it).normalizeName }})"
 }
 
 class ConstructorSpecification(name: String) : SubroutineSpecification(name)

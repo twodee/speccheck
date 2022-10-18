@@ -28,9 +28,11 @@ annotation class SpecifiedConstructor(
 )
 
 @Retention(AnnotationRetention.RUNTIME)
-annotation class SpecifiedField()
+annotation class SpecifiedField
 
 @Retention(AnnotationRetention.RUNTIME)
 annotation class Test(
-  val order: Int = 0
+  val order: Int = 0,
+  val points: Int = 0,
+  val timeout: Int = 1
 )

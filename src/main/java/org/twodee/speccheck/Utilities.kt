@@ -2,32 +2,11 @@ package org.twodee.speccheck
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import java.awt.Dialog
-import java.awt.GridBagConstraints
-import java.awt.GridBagLayout
-import java.awt.Insets
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
 import java.lang.reflect.Modifier
-import java.util.ArrayList
-import java.util.concurrent.locks.ReentrantLock
 import javax.swing.*
-import kotlin.concurrent.withLock
-import javax.swing.JOptionPane
-import com.sun.java.accessibility.util.AWTEventMonitor.addWindowListener
-import java.beans.PropertyChangeEvent
-import java.beans.PropertyChangeListener
-import java.awt.Dialog.ModalityType
-import javax.swing.JDialog
-import javax.swing.JScrollPane
-import javax.swing.JList
-import java.awt.BorderLayout
 import java.io.File
 import java.io.InputStream
 import java.lang.reflect.Method
-import java.nio.charset.Charset
-import javax.swing.JPanel
-
 
 object Utilities {
   val gson: Gson
