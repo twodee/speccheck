@@ -118,7 +118,7 @@ val Class<*>.publicConstructors
   }
 
 val Class<*>.instanceVariableCount
-  get() = fields.count {
+  get() = declaredFields.count {
     !Modifier.isStatic(it.modifiers)
   }
 

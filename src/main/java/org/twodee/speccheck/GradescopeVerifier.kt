@@ -58,7 +58,7 @@ object GradescopeVerifier {
         val testResult = TestResult("CheckStyle")
         testResult.score = -5
         testResult.status = "failed"
-        testResult.output = String.format("I tried running CheckStyle on the source for ${classSpecification.name}, but it failed with this output:%n%n$output")
+        testResult.output = String.format("I tried running CheckStyle on the source for ${classSpecification.name}, but it failed with this output:%n%n%s", output)
         report.tests.add(testResult)
         return
       }
@@ -80,7 +80,7 @@ object GradescopeVerifier {
 
     // Assert number of instance variables.
     if (classSpecification.maxInstanceVariables >= 0 && clazz.instanceVariableCount > classSpecification.maxInstanceVariables) {
-      throw SpecViolation("I found a lot of instance variables in class ${classSpecification.name}. Too many. Perhaps some of them should be local variables?")
+      throw SpecViolation("I found a lot of instance variables in class ${classSpecification.name}. More than you need to solve this problem.")
     }
 
     // Assert superclass.

@@ -60,7 +60,7 @@ object Verifier {
 
     // Assert number of instance variables.
     if (classSpecification.maxInstanceVariables >= 0 && clazz.instanceVariableCount > classSpecification.maxInstanceVariables) {
-      throw SpecViolation("I found a lot of instance variables in class ${classSpecification.name}. Too many. Perhaps some of them should be local variables?")
+      throw SpecViolation("I found a lot of instance variables in class ${classSpecification.name}. More than you need to solve this problem.")
     }
 
     // Assert superclass.

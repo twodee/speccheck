@@ -80,6 +80,24 @@ object Assert {
     throw SpecViolation(String.format(message, *fields))
   }
 
+  fun assertEqualsSpace(expected: String, actual: String, message: String, vararg fields: Any) {
+    if (expected != actual) {
+            throw SpecViolation(String.format("""
+$message
+
+Expected with spaces marked:
+--------------------
+${expected.replace(' ', '·').replace("\n", "¶\n")}
+--------------------
+
+Actual with spaces marked:
+--------------------
+${actual.replace(' ', '·').replace("\n", "¶\n")}
+--------------------
+""", *fields))
+    }
+  }
+
   fun assertEquals(expected: String, actual: String, message: String, vararg fields: Any) {
     if (expected != actual) {
       val expecteds = expected.split("(?<=\r?\n)".toRegex()).dropLastWhile { it.isEmpty() }
@@ -155,6 +173,19 @@ $message
           throw SpecViolation(String.format("$message But element [$r][$c] wasn't what I expected.\n  Expected: ${expected[r][c]}\n    Actual: ${actual[r][c]}", *fields))
         }
       }
+    }
+  }
+
+  fun <T> assertArrayEqualsShowAll(expected: Array<T>, actual: Array<T>, message: String, vararg fields: Any) {
+    // Compare same-sized chunks first.
+    repeat (min(expected.size, actual.size)) { i ->
+      if (expected[i] != actual[i]) {
+        throw SpecViolation(String.format("$message But element $i wasn't what I expected.\n  Expected: ${expected.joinToString(", ")}\n    Actual: ${actual.joinToString(", ")}", *fields))
+      }
+    }
+
+    if (expected.size != actual.size) {
+      throw SpecViolation(String.format("$message But the array had a different length than I expected.\n  Expected: ${expected.size} ${expected.contentToString()}\n    Actual: ${actual.size} ${actual.contentToString()}", *fields))
     }
   }
 
